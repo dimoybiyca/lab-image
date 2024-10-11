@@ -1,0 +1,28 @@
+form {
+  margin-bottom: 50px;
+  display: flex;
+  gap: 50px;
+  flex-wrap: wrap;
+}
+
+label,
+.label {
+  font-size: 22px;
+}
+
+.flex {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

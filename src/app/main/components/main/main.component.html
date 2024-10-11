@@ -1,0 +1,33 @@
+<div class="header">
+  <button [ngClass]="{ active: mode === 'data' }" (click)="onModeSet('data')">
+    Load data
+  </button>
+  <button [ngClass]="{ active: mode === 'train' }" (click)="onModeSet('train')">
+    Train
+  </button>
+  <button [ngClass]="{ active: mode === 'test' }" (click)="onModeSet('test')">
+    Test
+  </button>
+</div>
+
+<div class="container">
+  <div class="data" [ngClass]="{ visible: mode === 'data' }">
+    <app-status-bar></app-status-bar>
+
+    <app-images-loader
+      (imagesChanged)="onImagesChanged($event)"
+    ></app-images-loader>
+  </div>
+
+  <div class="trainer" [ngClass]="{ visible: mode === 'train' }">
+    <app-status-bar></app-status-bar>
+
+    <app-model-options></app-model-options>
+
+    <app-train-model [labels]="labels" [images]="images"></app-train-model>
+  </div>
+
+  <div class="test" [ngClass]="{ visible: mode === 'test' }">
+    <app-test-model></app-test-model>
+  </div>
+</div>

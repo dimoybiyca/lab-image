@@ -1,0 +1,5 @@
+<div class="bar {{ ($status | async)?.type || '' }}">
+  @if ($status| async) {
+  <p class="status">{{ ($status | async).message }}</p>
+  }
+</div>

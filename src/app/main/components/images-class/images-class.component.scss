@@ -1,0 +1,65 @@
+input[type="file"] {
+  display: none;
+}
+
+img {
+  max-width: 100px;
+  max-height: 100px;
+}
+
+p-card {
+  display: block;
+}
+
+.images {
+  margin-top: 20px;
+  padding-right: 20px;
+  max-height: 500px;
+  overflow: auto;
+}
+
+.image {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  height: 100px;
+}
+
+.image-meta {
+  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-name {
+  overflow: hidden;
+  text-wrap: nowrap;
+  text-overflow: ellipsis;
+}
+
+.inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.custom-file-upload {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  height: 45px;
+  background-color: #3b82f6;
+  border: 1px solid #3b82f6;
+  color: #fff;
+  border-radius: 5px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.card-header {
+  padding: 10px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

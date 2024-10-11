@@ -1,0 +1,125 @@
+@if(modelOptionsForm) {
+<h2>Model options</h2>
+<p-divider></p-divider>
+<form class="form" [formGroup]="modelOptionsForm">
+  <div class="form-left">
+    <div class="flex">
+      <span class="label">Layers</span>
+      <p-selectButton
+        formControlName="layers"
+        [options]="layersOptions"
+        pTooltip="Number of hidden layers in the model. More layers can learn more complex patterns but can also lead to overfitting and require more computational resources"
+      ></p-selectButton>
+    </div>
+
+    <div class="flex">
+      <span class="label">Rendering</span>
+      <p-selectButton
+        formControlName="rendering"
+        [options]="renderingOptions"
+        pTooltip="The rendering mode of the model"
+      ></p-selectButton>
+    </div>
+
+    <div class="flex">
+      <span class="label">Optimizer</span>
+      <p-dropdown
+        formControlName="optimizer"
+        [options]="optimizers"
+        placeholder="Select an optimizer"
+        pTooltip="Algorithm that will minimize the loss function"
+      ></p-dropdown>
+    </div>
+
+    <div class="flex">
+      <span class="label">Loss function</span>
+      <p-dropdown
+        formControlName="loss"
+        [options]="loss"
+        placeholder="Select an loss function"
+        pTooltip="Function that will be minimized during training"
+      ></p-dropdown>
+    </div>
+  </div>
+
+  <div class="form-right">
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="neurons"> Neurons </label>
+      <p-inputNumber
+        formControlName="neurons"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="neurons"
+        spinnerMode="horizontal"
+        [step]="8"
+        min="8"
+        max="512"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Number of neurons in the hidden layer"
+      />
+    </div>
+
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="epochs"> Epochs </label>
+      <p-inputNumber
+        formControlName="epochs"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="epochs"
+        spinnerMode="horizontal"
+        [step]="1"
+        min="5"
+        max="100"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Number of times the model will see the entire dataset"
+      />
+    </div>
+
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="epochs">
+        Shape horizontal
+      </label>
+      <p-inputNumber
+        formControlName="shapew"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="epochs"
+        spinnerMode="horizontal"
+        [step]="16"
+        min="64"
+        max="1024"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Width of the matrix that represent the image in the model"
+      />
+    </div>
+
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="epochs"> Shape vertical </label>
+      <p-inputNumber
+        formControlName="shapeh"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="epochs"
+        spinnerMode="horizontal"
+        [step]="16"
+        min="64"
+        max="1024"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Height of the matrix that represent the image in the model"
+      />
+    </div>
+  </div>
+</form>
+}

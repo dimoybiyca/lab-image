@@ -1,0 +1,30 @@
+.bar {
+  margin-bottom: 20px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status {
+  text-align: center;
+  color: white;
+  margin: 0;
+  font-size: 22px;
+}
+
+.error {
+  background-color: var(--red-500);
+}
+
+.success {
+  background-color: var(--green-500);
+}
+
+.warning {
+  background-color: var(--yellow-500);
+}
+
+.info {
+  background-color: var(--blue-500);
+}

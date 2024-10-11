@@ -1,0 +1,59 @@
+<p-card [style]="{ width: '420px' }">
+  <ng-template pTemplate="header">
+    <div class="card-header">
+      <div class="p-card-title">Dataset {{ idx }}</div>
+      <p-button
+        icon="pi pi-times"
+        [rounded]="true"
+        [text]="true"
+        severity="danger"
+        (click)="onDatasetDelete(idx)"
+      ></p-button>
+    </div>
+  </ng-template>
+
+  <div class="inputs">
+    <p-floatLabel>
+      <input
+        pInputText
+        id="className"
+        [(ngModel)]="className"
+        (ngModelChange)="onLabelChange()"
+      />
+      <label for="className">Label</label>
+    </p-floatLabel>
+
+    <label for="file-upload{{ idx }}" class="custom-file-upload">
+      Upload
+    </label>
+    <input
+      id="file-upload{{ idx }}"
+      class="file-upload"
+      type="file"
+      (change)="onFilesSelected($event)"
+      multiple
+      accept="image/*"
+    />
+  </div>
+
+  <div class="images">
+    @for(image of files; track i; let i = $index) {
+    <div class="image">
+      <span>{{ i + 1 }}</span>
+
+      <img [src]="image.src" [alt]="image.label" width="100" />
+
+      <div class="image-meta">
+        <span class="image-name">{{ image.name }}</span>
+        <span>{{ image.size / 1024 | number : "1.0-0" }} KB</span>
+      </div>
+
+      <p-button
+        icon="pi pi-times"
+        severity="danger"
+        (click)="onDeleteImage(i)"
+      ></p-button>
+    </div>
+    }
+  </div>
+</p-card>

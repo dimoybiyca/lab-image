@@ -1,0 +1,29 @@
+@if($isModel | async){
+<div>
+  <label for="test-files" class="custom-file-upload"> Upload </label>
+  <input
+    id="test-files"
+    class="file-upload"
+    type="file"
+    (change)="onTestFilesSelected($event)"
+    multiple
+    accept="image/*"
+  />
+
+  @if(predictions.length > 0){
+  <div class="predictions">
+    <h2>Predictions</h2>
+
+    @for (prediction of predictions; track $index) {
+    <div class="list">
+      <div class="list-element">
+        <span>{{ $index + 1 }}</span>
+        <img [src]="prediction.src" width="100" />
+        <p>Predicted Label: {{ prediction.label }}</p>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>
+}

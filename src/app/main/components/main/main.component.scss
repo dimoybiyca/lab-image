@@ -1,0 +1,49 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  button {
+    flex-grow: 1;
+    border: none;
+    background-color: white;
+    color: var(--blue-500);
+    font-size: 18px;
+    padding: 15px 0;
+    box-sizing: content-box;
+    transition: all 0.5s;
+
+    &:hover:not(.active) {
+      background-color: var(--blue-200);
+      color: white;
+    }
+  }
+
+  .active {
+    background-color: var(--blue-500);
+    color: white;
+    border: 2px solid var(--blue-500);
+  }
+}
+
+.container {
+  max-width: 1420px;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.data {
+  display: none;
+}
+
+.trainer {
+  display: none;
+}
+
+.test {
+  display: none;
+}
+
+.visible {
+  display: block;
+}
