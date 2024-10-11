@@ -1,0 +1,18 @@
+<div class="console">
+  <div class="bar" (click)="onBarClick()">
+    > Console
+    <span>{{ isShowLogs ? "Click to hide" : "Click to expand" }} </span>
+  </div>
+
+  @if(isShowLogs) {
+  <div class="logs" #logsContainer>
+    @for(log of ($logs | async); track $index) {
+    <div class="log">
+      <span>{{ log.timestamp | date : "HH:mm:ss.SSS" }}</span>
+      <span>> {{ log.message }}</span>
+    </div>
+    }
+    <div class="log">{{ navigator.userAgent }} ></div>
+  </div>
+  }
+</div>

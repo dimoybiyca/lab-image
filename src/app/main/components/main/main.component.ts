@@ -10,6 +10,9 @@ import { StatusService } from '../../services/status-service/status.service';
 import { ButtonModule } from 'primeng/button';
 import { TrainModelComponent } from '../train-model/train-model.component';
 import { TestModelComponent } from '../test-model/test-model.component';
+import { ModelService } from '../../services/model-service/model.service';
+import { LoggerService } from '../../services/logger-service/logger.service';
+import { LoggerComponent } from '../logger/logger.component';
 
 @Component({
   selector: 'app-main',
@@ -27,15 +30,22 @@ import { TestModelComponent } from '../test-model/test-model.component';
     NgClass,
     TrainModelComponent,
     TestModelComponent,
+    LoggerComponent,
   ],
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
 })
 export class MainComponent implements OnInit {
+  private statusService: StatusService = inject(StatusService);
+  private modelService: ModelService = inject(ModelService);
+  private loggerService: LoggerService = inject(LoggerService);
+
   onModeSet(mode: string) {
+    if (mode === 'test' && !this.modelService.model) {
+      return;
+    }
     this.mode = mode;
   }
-  private statusService: StatusService = inject(StatusService);
 
   images: { src: string; label: string }[] = [];
   model: tf.Sequential = null;
@@ -45,6 +55,18 @@ export class MainComponent implements OnInit {
 
   ngOnInit(): void {
     this.setStatus();
+    tf.setBackend('webgl');
+
+    if (tf.getBackend() !== 'webgl') {
+      this.loggerService.pushLog(
+        'WebGL is not available, falling back to CPU backend'
+      );
+      tf.setBackend('cpu');
+    }
+
+    this.loggerService.pushLog('Application started');
+    this.loggerService.pushLog(`TensorFlow.js version: ${tf.version_core}`);
+    this.loggerService.pushLog(`Using ${tf.getBackend()} backend`);
   }
 
   onImagesChanged($event: { src: string; label: string }[]): void {

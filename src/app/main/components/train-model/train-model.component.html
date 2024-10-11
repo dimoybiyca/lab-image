@@ -1,17 +1,7 @@
-<!-- @if(labels.length > 1) { -->
-<h2>Train model</h2>
-<p-divider></p-divider>
-
 <div class="train">
-  <p-floatLabel>
-    <input pInputText id="modelName" [(ngModel)]="modelName" />
-    <label for="modelName">Model name</label>
-  </p-floatLabel>
-
   <p-button
     (click)="trainModel()"
     label="Train Model"
     [disabled]="isTrainingDisable()"
   ></p-button>
 </div>
-<!-- } -->

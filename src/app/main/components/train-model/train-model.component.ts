@@ -24,16 +24,16 @@ export class TrainModelComponent {
   @Input() labels: string[] = ['1', '2'];
   @Input() images: { src: string; label: string }[] = [];
 
-  private statusService: StatusService = inject(StatusService);
   private modelService: ModelService = inject(ModelService);
 
-  modelName: string = '';
-
   trainModel(): void {
-    this.modelService.trainModel(this.modelName);
+    this.modelService.trainModel();
   }
 
   isTrainingDisable(): boolean {
+    this.labels = this.modelService.labels;
+    this.images = this.modelService.images;
+
     if (this.labels.some((label) => !label)) {
       return true;
     }
@@ -42,12 +42,6 @@ export class TrainModelComponent {
       return true;
     }
 
-    if (!this.modelName) {
-      this.statusService.setStatus('MODEL_NAME_SHOULD_NOT_BE_EMPTY', 'error');
-      return true;
-    }
-
-    this.statusService.setStatus('READY', 'success');
     return false;
   }
 }

@@ -7,6 +7,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { DropdownModule } from 'primeng/dropdown';
 import { DividerModule } from 'primeng/divider';
 import { ModelService } from '../../services/model-service/model.service';
+import { TrainModelComponent } from '../train-model/train-model.component';
 
 @Component({
   selector: 'app-model-options',
@@ -19,6 +20,7 @@ import { ModelService } from '../../services/model-service/model.service';
     SelectButtonModule,
     DropdownModule,
     DividerModule,
+    TrainModelComponent,
   ],
   templateUrl: './model-options.component.html',
   styleUrl: './model-options.component.scss',
