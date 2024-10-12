@@ -3,13 +3,14 @@ import * as tf from '@tensorflow/tfjs';
 import { ButtonModule } from 'primeng/button';
 import { Subject } from 'rxjs';
 import { ModelService } from '../../services/model-service/model.service';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
 import { NgZone } from '@angular/core';
+import { ProgressBarModule } from 'primeng/progressbar';
 
 @Component({
   selector: 'app-test-model',
   standalone: true,
-  imports: [ButtonModule, AsyncPipe],
+  imports: [ButtonModule, AsyncPipe, DecimalPipe, ProgressBarModule],
   templateUrl: './test-model.component.html',
   styleUrl: './test-model.component.scss',
 })
@@ -17,10 +18,24 @@ export class TestModelComponent {
   private ngZone: NgZone = inject(NgZone);
   private modelService: ModelService = inject(ModelService);
 
-  predictions: { src: string; label: string }[] = [];
+  isLoading: boolean = false;
+  total: number = 0;
+  loaded: number = 0;
+
+  predictions: {
+    src: string;
+    label: string;
+    probabilities: { label: string; probability: number }[];
+  }[] = [];
   $isModel: Subject<boolean> = this.modelService.$isModel;
 
   async onTestFilesSelected(event: Event) {
+    this.isLoading = true;
+
+    const input1 = event.target as HTMLInputElement;
+    this.total = input1.files.length;
+    this.loaded = 0;
+
     this.ngZone.runOutsideAngular(() => {
       const input = event.target as HTMLInputElement;
       console.log(input.files);
@@ -56,29 +71,43 @@ export class TestModelComponent {
                   .div(tf.scalar(255)) // Normalize to [0, 1] range (important for consistency)
                   .expandDims(0); // Add batch dimension
 
-                // Log input shape to verify it's correct
-                console.log('Input tensor shape:', resizedTensor.shape); // Should be [1, height, width, 3]
-
                 const prediction = this.modelService?.model?.model.predict(
                   resizedTensor
                 ) as tf.Tensor;
 
-                // Log the prediction tensor for debugging purposes
-                prediction.print(); // Check the prediction tensor output
+                // Get raw prediction probabilities (softmax output)
+                const predictionData = await prediction.data();
 
-                // Use argMax to get the predicted index
-                const predictedIndex = (await prediction.argMax(-1).data())[0];
-                console.log(`Predicted index: ${predictedIndex}`);
+                // Display probabilities for all labels
+                const probabilities = Array.from(predictionData);
+                const labelProbabilities: {
+                  label: string;
+                  probability: number;
+                }[] = this.modelService?.model?.labels.map((label, index) => ({
+                  label: label,
+                  probability: probabilities[index],
+                }));
 
-                // Get the corresponding label from the labels array
+                // Find the label with the highest probability
+                const predictedIndex = probabilities.indexOf(
+                  Math.max(...probabilities)
+                );
                 const predictedLabel =
                   this.modelService?.model?.labels[predictedIndex];
-                console.log(`Predicted label: ${predictedLabel}`);
 
-                // Add prediction to the array for display
-                this.predictions.push({
-                  src: e.target.result,
-                  label: predictedLabel,
+                // Add to the predictions array
+                this.ngZone.run(() => {
+                  this.predictions.push({
+                    src: e.target.result,
+                    label: predictedLabel,
+                    probabilities: labelProbabilities,
+                  });
+                });
+
+                console.log('Predictions:', this.predictions);
+
+                this.ngZone.run(() => {
+                  this.loaded++;
                 });
 
                 resolve();

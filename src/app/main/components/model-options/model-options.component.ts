@@ -88,8 +88,8 @@ export class ModelOptionsComponent implements OnInit {
     this.modelOptionsForm = this.fb.group({
       neurons: new FormControl<number>(64),
       epochs: new FormControl<number>(5),
-      shapeh: new FormControl<number>(128),
-      shapew: new FormControl<number>(128),
+      shapeh: new FormControl<number>(240),
+      shapew: new FormControl<number>(240),
       layers: new FormControl<number>(3),
       rendering: new FormControl<string>('webgl'),
       optimizer: new FormControl<string>('adam'),

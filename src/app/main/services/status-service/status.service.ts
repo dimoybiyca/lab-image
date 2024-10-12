@@ -15,7 +15,7 @@ export class StatusService {
     NOT_ENOUGH_LABELS:
       'Need at least 2 non empty datasets with unique labels for training',
     NOT_ENOUGH_IMAGES:
-      'It is recomended to use at least 20 images of each type for training',
+      'It is recomended to use at least 5 images of each type for training',
     LABELS_SHOULD_NOT_BE_EMPTY: 'Labels cant be blank',
     MODEL_NAME_SHOULD_NOT_BE_EMPTY: 'Model name should not be empty',
     READY: 'Ready for training',

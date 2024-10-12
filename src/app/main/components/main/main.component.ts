@@ -87,18 +87,7 @@ export class MainComponent implements OnInit {
       return;
     }
 
-    const minImagesPerLabel = 20;
-    const imagesPerLabel = this.labels.map(
-      (label) => this.images.filter((image) => image.label === label).length
-    );
-    if (imagesPerLabel.some((count) => count < minImagesPerLabel)) {
-      this.statusService.setStatus('NOT_ENOUGH_IMAGES', 'warning');
-      return;
-    }
-
-    if (this.model) {
-      this.statusService.setStatus('MODEL_TRAINED', 'success');
-    }
+    this.statusService.setStatus('READY', 'success');
   }
 
   async trainModel() {
