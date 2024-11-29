@@ -1,0 +1,2538 @@
+app.component.html
+<app-main></app-main>
+
+<!-- <div>
+  <input
+    type="file"
+    (change)="onFilesSelected($event)"
+    multiple
+    accept="image/*"
+  />
+
+  <div *ngIf="images.length > 0">
+    <h2>Image Previews</h2>
+    <div *ngFor="let image of images">
+      <img [src]="image.src" [alt]="image.label" width="100" />
+      <input type="text" [(ngModel)]="image.label" placeholder="Enter label" />
+    </div>
+    <button (click)="trainModel()">Train Model</button>
+  </div>
+
+  <div *ngIf="model">
+    <h2>Model Trained!</h2>
+    <input
+      type="file"
+      (change)="onTestFilesSelected($event)"
+      multiple
+      accept="image/*"
+    />
+    <div *ngIf="predictions.length > 0">
+      <h2>Predictions</h2>
+      <div *ngFor="let prediction of predictions">
+        <img [src]="prediction.src" width="100" />
+        <p>Predicted Label: {{ prediction.label }}</p>
+      </div>
+    </div>
+  </div>
+</div> -->
+ 
+app.component.scss
+img {
+  width: 800px;
+}
+ 
+app.component.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { AppComponent } from './app.component';
+
+describe('AppComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it(`should have the 'image-classifier' title`, () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app.title).toEqual('image-classifier');
+  });
+
+  it('should render title', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, image-classifier');
+  });
+});
+ 
+app.component.ts
+import { Component } from '@angular/core';
+import { MainComponent } from './main/components/main/main.component';
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [MainComponent],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
+})
+export class AppComponent {
+  // images: { src: string; label: string }[] = [];
+  // model: any = null;
+  // predictions: { src: string; label: string }[] = [];
+  // onFilesSelected(event: Event) {
+  //   const input = event.target as HTMLInputElement;
+  //   if (input.files) {
+  //     for (let i = 0; i < input.files.length; i++) {
+  //       const file = input.files[i];
+  //       const reader = new FileReader();
+  //       reader.onload = (e: any) => {
+  //         this.images.push({ src: e.target.result, label: '' });
+  //       };
+  //       reader.readAsDataURL(file);
+  //     }
+  //   }
+  // }
+  // async trainModel() {
+  //   const xs: tf.Tensor[] = [];
+  //   const ys: tf.Tensor[] = [];
+  //   // Collect unique labels
+  //   const labelsSet = new Set<string>();
+  //   this.images.forEach((image) => labelsSet.add(image.label));
+  //   const labelsArray = Array.from(labelsSet);
+  //   const numClasses = labelsArray.length;
+  //   for (const image of this.images) {
+  //     const img = new Image();
+  //     img.src = image.src;
+  //     await new Promise<void>((resolve) => {
+  //       img.onload = () => {
+  //         const tensor = tf.browser.fromPixels(img);
+  //         // Resize image to a fixed size (e.g., 128x128)
+  //         const resizedTensor = tf.image.resizeBilinear(tensor, [128, 128]);
+  //         xs.push(resizedTensor);
+  //         // Convert label to one-hot encoding
+  //         const labelIndex = this.getLabelIndex(image.label);
+  //         const oneHotLabel = tf.oneHot(
+  //           tf.tensor1d([labelIndex], 'int32'),
+  //           numClasses
+  //         );
+  //         ys.push(oneHotLabel);
+  //         resolve();
+  //       };
+  //     });
+  //   }
+  //   // Stack tensors and ensure correct shape
+  //   const xsTensor = tf.stack(xs);
+  //   const ysTensor = tf.stack(ys).reshape([-1, numClasses]); // Ensure target tensor has shape [batchSize, numClasses]
+  //   // Define a simple model
+  //   this.model = tf.sequential();
+  //   this.model.add(tf.layers.flatten({ inputShape: [128, 128, 3] }));
+  //   this.model.add(tf.layers.dense({ units: 64, activation: 'relu' }));
+  //   this.model.add(
+  //     tf.layers.dense({ units: numClasses, activation: 'softmax' })
+  //   );
+  //   this.model.compile({
+  //     optimizer: 'adam',
+  //     loss: 'categoricalCrossentropy',
+  //     metrics: ['accuracy'],
+  //   });
+  //   await this.model.fit(xsTensor, ysTensor, { epochs: 5 });
+  //   console.log('Model trained');
+  // }
+  // getLabelIndex(label: string): number {
+  //   // Map labels to indices (simple example)
+  //   const labels = ['battleship', 'github', 'bird']; // Update with your own labels
+  //   return labels.indexOf(label);
+  // }
+  // async onTestFilesSelected(event: Event) {
+  //   const input = event.target as HTMLInputElement;
+  //   if (input.files && this.model) {
+  //     this.predictions = [];
+  //     for (let i = 0; i < input.files.length; i++) {
+  //       const file = input.files[i];
+  //       const reader = new FileReader();
+  //       reader.onload = async (e: any) => {
+  //         const img = new Image();
+  //         img.src = e.target.result;
+  //         await new Promise<void>((resolve) => {
+  //           img.onload = async () => {
+  //             const tensor = tf.browser.fromPixels(img);
+  //             const resizedTensor = tf.image
+  //               .resizeBilinear(tensor, [128, 128])
+  //               .expandDims(0); // Add batch dimension
+  //             const prediction = this.model.predict(resizedTensor) as tf.Tensor;
+  //             const predictedIndex = (await prediction.argMax(-1).data())[0];
+  //             const labelsArray = ['battleship', 'github', 'bird']; // Update with your own labels
+  //             const predictedLabel = labelsArray[predictedIndex];
+  //             this.predictions.push({
+  //               src: e.target.result,
+  //               label: predictedLabel,
+  //             });
+  //             resolve();
+  //           };
+  //         });
+  //       };
+  //       reader.readAsDataURL(file);
+  //     }
+  //   }
+  // }
+}
+ 
+app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { routes } from './app.routes';
+import { provideHttpClient } from '@angular/common/http';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(),
+    provideAnimationsAsync(),
+  ],
+};
+ 
+app.routes.ts
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [];
+ 
+images-class.component.html
+<p-card [style]="{ width: '420px' }">
+  <ng-template pTemplate="header">
+    <div class="card-header">
+      <div class="p-card-title">Dataset {{ idx }}</div>
+      <p-button
+        icon="pi pi-times"
+        [rounded]="true"
+        [text]="true"
+        severity="danger"
+        (click)="onDatasetDelete(idx)"
+      ></p-button>
+    </div>
+  </ng-template>
+
+  <div class="inputs">
+    <p-floatLabel>
+      <input
+        pInputText
+        id="className"
+        [(ngModel)]="className"
+        (ngModelChange)="onLabelChange()"
+      />
+      <label for="className">Label</label>
+    </p-floatLabel>
+
+    <label for="file-upload{{ idx }}" class="custom-file-upload">
+      Upload
+    </label>
+    <input
+      id="file-upload{{ idx }}"
+      class="file-upload"
+      type="file"
+      (change)="onFilesSelected($event)"
+      multiple
+      accept="image/*"
+    />
+  </div>
+
+  <div class="images">
+    @for(image of files; track i; let i = $index) {
+    <div class="image">
+      <span>{{ i + 1 }}</span>
+
+      <img [src]="image.src" [alt]="image.label" width="100" />
+
+      <div class="image-meta">
+        <span class="image-name">{{ image.name }}</span>
+        <span>{{ image.size / 1024 | number : "1.0-0" }} KB</span>
+      </div>
+
+      <p-button
+        icon="pi pi-times"
+        severity="danger"
+        (click)="onDeleteImage(i)"
+      ></p-button>
+    </div>
+    }
+  </div>
+</p-card>
+ 
+images-class.component.scss
+input[type="file"] {
+  display: none;
+}
+
+img {
+  max-width: 100px;
+  max-height: 100px;
+}
+
+p-card {
+  display: block;
+}
+
+.images {
+  margin-top: 20px;
+  padding-right: 20px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.image {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  height: 100px;
+}
+
+.image-meta {
+  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-name {
+  overflow: hidden;
+  text-wrap: nowrap;
+  text-overflow: ellipsis;
+}
+
+.inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.custom-file-upload {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  height: 45px;
+  background-color: #3b82f6;
+  border: 1px solid #3b82f6;
+  color: #fff;
+  border-radius: 5px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.card-header {
+  padding: 10px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+ 
+images-class.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ImagesClassComponent } from './images-class.component';
+
+describe('ImagesClassComponent', () => {
+  let component: ImagesClassComponent;
+  let fixture: ComponentFixture<ImagesClassComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ImagesClassComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(ImagesClassComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+images-class.component.ts
+import { DecimalPipe } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { FileUploadModule } from 'primeng/fileupload';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { InputTextModule } from 'primeng/inputtext';
+
+@Component({
+  selector: 'app-images-class',
+  standalone: true,
+  imports: [
+    FileUploadModule,
+    CardModule,
+    InputTextModule,
+    FloatLabelModule,
+    FormsModule,
+    ButtonModule,
+    DecimalPipe,
+  ],
+  templateUrl: './images-class.component.html',
+  styleUrl: './images-class.component.scss',
+})
+export class ImagesClassComponent {
+  @Output() datasetDelete: EventEmitter<void> = new EventEmitter();
+  @Output() imagesChanged: EventEmitter<any> = new EventEmitter();
+  @Input() idx: number = 0;
+
+  files: any[] = [];
+  className: string = '';
+
+  onFilesSelected($event: Event): void {
+    const input = $event.target as HTMLInputElement;
+
+    if (input.files) {
+      for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.files.push({
+            src: e.target.result,
+            name: $event.target['files'][i].name,
+            size: $event.target['files'][i].size,
+          });
+
+          this.emitImagesChanged();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+
+  onDeleteImage(idx: number): void {
+    this.files.splice(idx, 1);
+    this.emitImagesChanged();
+  }
+
+  onLabelChange(): void {
+    if (!this.files.length) {
+      return;
+    }
+
+    this.emitImagesChanged();
+  }
+
+  onDatasetDelete(idx: number): void {
+    this.datasetDelete.next();
+  }
+
+  private emitImagesChanged(): void {
+    this.imagesChanged.emit(
+      this.files.map((file) => ({
+        src: file.src,
+        label: this.className,
+      }))
+    );
+  }
+}
+ 
+images-loader.component.html
+<div class="bar">
+  <h2>Load datasets</h2>
+  <p-button
+    (click)="onAddClass()"
+    icon="pi pi-plus"
+    iconPos="left"
+    label="New dataset"
+  >
+  </p-button>
+</div>
+<p-divider></p-divider>
+
+<div class="list">
+  @for(class of classes; track idx; let idx = $index) {
+  <app-images-class
+    (imagesChanged)="onImagesChange(idx, $event)"
+    [idx]="class.id"
+  ></app-images-class>
+  }
+</div>
+ 
+images-loader.component.scss
+.bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.list {
+  display: flex;
+  gap: 10px;
+  overflow-y: none;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  padding-right: 20px;
+}
+ 
+images-loader.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ImagesLoaderComponent } from './images-loader.component';
+
+describe('ImagesLoaderComponent', () => {
+  let component: ImagesLoaderComponent;
+  let fixture: ComponentFixture<ImagesLoaderComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ImagesLoaderComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(ImagesLoaderComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+images-loader.component.ts
+import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { ImagesClassComponent } from '../images-class/images-class.component';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { ModelService } from '../../services/model-service/model.service';
+
+@Component({
+  selector: 'app-images-loader',
+  standalone: true,
+  imports: [ImagesClassComponent, CardModule, ButtonModule, DividerModule],
+  templateUrl: './images-loader.component.html',
+  styleUrl: './images-loader.component.scss',
+})
+export class ImagesLoaderComponent implements OnInit {
+  @Output() imagesChanged: EventEmitter<{ src: string; label: string }[]> =
+    new EventEmitter();
+
+  private modelService: ModelService = inject(ModelService);
+  private id = 0;
+
+  classes: { label: string; id: number }[] = [];
+  images: { [key: number]: { src: string; label: string }[] } = {};
+
+  ngOnInit(): void {
+    this.onAddClass();
+  }
+
+  onAddClass(): void {
+    this.classes.push({ label: '', id: this.getDatasetId() });
+    this.emitImagesChanged();
+  }
+
+  onImagesChange(idx, images: { src: string; label: string }[]): void {
+    this.images[idx] = images;
+
+    this.emitImagesChanged();
+  }
+
+  getDatasetId(): number {
+    return this.id++;
+  }
+
+  private emitImagesChanged(): void {
+    const images = Object.values(this.images).reduce(
+      (acc, val) => acc.concat(val),
+      []
+    );
+
+    this.modelService.saveImages(images);
+    this.imagesChanged.emit(images);
+  }
+}
+ 
+logger.component.html
+<div class="console">
+  <div class="bar" (click)="onBarClick()">
+    > Console
+    <span>{{ isShowLogs ? "Click to hide" : "Click to expand" }} </span>
+  </div>
+
+  @if(isShowLogs) {
+  <div class="logs" #logsContainer>
+    @for(log of ($logs | async); track $index) {
+    <div class="log">
+      <span>{{ log.timestamp | date : "HH:mm:ss.SSS" }}</span>
+      <span>> {{ log.message }}</span>
+    </div>
+    }
+    <div class="log">{{ navigator.userAgent }} ></div>
+  </div>
+  }
+</div>
+ 
+logger.component.scss
+.bar {
+  background-color: black;
+  justify-self: flex-start;
+  font-size: 16px;
+  padding: 3px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.logs {
+  padding: 5px;
+  overflow-y: auto;
+  height: 300px;
+}
+
+.console {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-family: monospace;
+  background-color: rgb(0, 10, 57);
+  color: white;
+}
+
+.log {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+}
+ 
+logger.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { LoggerComponent } from './logger.component';
+
+describe('LoggerComponent', () => {
+  let component: LoggerComponent;
+  let fixture: ComponentFixture<LoggerComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [LoggerComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(LoggerComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+logger.component.ts
+import {
+  Component,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { LoggerService } from '../../services/logger-service/logger.service';
+import { AsyncPipe, DatePipe } from '@angular/common';
+
+@Component({
+  selector: 'app-logger',
+  standalone: true,
+  imports: [AsyncPipe, DatePipe],
+  templateUrl: './logger.component.html',
+  styleUrl: './logger.component.scss',
+})
+export class LoggerComponent implements OnInit {
+  navigator = navigator;
+  ngOnInit(): void {
+    this.$logs.subscribe(() => {
+      this.scrollToBottom();
+    });
+  }
+  @ViewChild('logsContainer') logsContainer: ElementRef;
+  isShowLogs = false;
+
+  onBarClick() {
+    this.isShowLogs = !this.isShowLogs;
+
+    if (this.isShowLogs) {
+      this.scrollToBottom();
+    }
+  }
+
+  scrollToBottom() {
+    setTimeout(() => {
+      if (!this.logsContainer) {
+        return;
+      }
+
+      this.logsContainer.nativeElement.scrollTop =
+        this.logsContainer.nativeElement.scrollHeight;
+    });
+  }
+  private loggerService: LoggerService = inject(LoggerService);
+  $logs = this.loggerService.$logs;
+}
+ 
+main.component.html
+<div class="header">
+  <button [ngClass]="{ active: mode === 'data' }" (click)="onModeSet('data')">
+    Load data
+  </button>
+  <button [ngClass]="{ active: mode === 'train' }" (click)="onModeSet('train')">
+    Train
+  </button>
+  <button [ngClass]="{ active: mode === 'test' }" (click)="onModeSet('test')">
+    Test
+  </button>
+</div>
+
+<div class="container">
+  <div class="data" [ngClass]="{ visible: mode === 'data' }">
+    <app-status-bar></app-status-bar>
+
+    <app-images-loader
+      (imagesChanged)="onImagesChanged($event)"
+    ></app-images-loader>
+  </div>
+
+  <div class="trainer" [ngClass]="{ visible: mode === 'train' }">
+    <app-status-bar></app-status-bar>
+
+    <app-model-options></app-model-options>
+  </div>
+
+  <div class="test" [ngClass]="{ visible: mode === 'test' }">
+    <app-test-model></app-test-model>
+  </div>
+</div>
+
+<app-logger></app-logger>
+ 
+main.component.scss
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  button {
+    flex-grow: 1;
+    border: none;
+    background-color: white;
+    color: var(--blue-500);
+    font-size: 18px;
+    padding: 15px 0;
+    box-sizing: content-box;
+    transition: all 0.5s;
+
+    &:hover:not(.active) {
+      background-color: var(--blue-200);
+      color: white;
+    }
+  }
+
+  .active {
+    background-color: var(--blue-500);
+    color: white;
+    border: 2px solid var(--blue-500);
+  }
+}
+
+.container {
+  max-width: 1420px;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.data {
+  display: none;
+}
+
+.trainer {
+  display: none;
+}
+
+.test {
+  display: none;
+}
+
+.visible {
+  display: block;
+}
+ 
+main.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { MainComponent } from './main.component';
+
+describe('MainComponent', () => {
+  let component: MainComponent;
+  let fixture: ComponentFixture<MainComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [MainComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(MainComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+main.component.ts
+import { DecimalPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
+import * as tf from '@tensorflow/tfjs';
+import { ImagesLoaderComponent } from '../images-loader/images-loader.component';
+import { ModelOptionsComponent } from '../model-options/model-options.component';
+import { StatusBarComponent } from '../status-bar/status-bar.component';
+import { StatusService } from '../../services/status-service/status.service';
+import { ButtonModule } from 'primeng/button';
+import { TrainModelComponent } from '../train-model/train-model.component';
+import { TestModelComponent } from '../test-model/test-model.component';
+import { ModelService } from '../../services/model-service/model.service';
+import { LoggerService } from '../../services/logger-service/logger.service';
+import { LoggerComponent } from '../logger/logger.component';
+
+@Component({
+  selector: 'app-main',
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    NgIf,
+    NgFor,
+    DecimalPipe,
+    FormsModule,
+    ButtonModule,
+    ImagesLoaderComponent,
+    ModelOptionsComponent,
+    StatusBarComponent,
+    NgClass,
+    TrainModelComponent,
+    TestModelComponent,
+    LoggerComponent,
+  ],
+  templateUrl: './main.component.html',
+  styleUrl: './main.component.scss',
+})
+export class MainComponent implements OnInit {
+  private statusService: StatusService = inject(StatusService);
+  private modelService: ModelService = inject(ModelService);
+  private loggerService: LoggerService = inject(LoggerService);
+
+  onModeSet(mode: string) {
+    if (mode === 'test' && !this.modelService.model) {
+      return;
+    }
+    this.mode = mode;
+  }
+
+  images: { src: string; label: string }[] = [];
+  model: tf.Sequential = null;
+  predictions: { src: string; label: string }[] = [];
+  labels: string[] = [];
+  mode: string = 'data';
+
+  ngOnInit(): void {
+    this.setStatus();
+    tf.setBackend('webgl');
+
+    if (tf.getBackend() !== 'webgl') {
+      this.loggerService.pushLog(
+        'WebGL is not available, falling back to CPU backend'
+      );
+      tf.setBackend('cpu');
+    }
+
+    this.loggerService.pushLog('Application started');
+    this.loggerService.pushLog(`TensorFlow.js version: ${tf.version_core}`);
+    this.loggerService.pushLog(`Using ${tf.getBackend()} backend`);
+  }
+
+  onImagesChanged($event: { src: string; label: string }[]): void {
+    this.images = $event;
+    this.labels = Array.from(new Set(this.images.map((image) => image.label)));
+
+    this.setStatus();
+  }
+
+  setStatus(): void {
+    if (this.labels.some((label) => !label)) {
+      this.statusService.setStatus('LABELS_SHOULD_NOT_BE_EMPTY', 'error');
+      return;
+    }
+
+    if (this.labels.length < 2) {
+      this.statusService.setStatus('NOT_ENOUGH_LABELS', 'error');
+      return;
+    }
+
+    this.statusService.setStatus('READY', 'success');
+  }
+
+  async trainModel() {
+    const xs: tf.Tensor[] = [];
+    const ys: tf.Tensor[] = [];
+
+    const labelsSet = new Set<string>();
+    this.images.forEach((image) => labelsSet.add(image.label));
+    const labelsArray = Array.from(labelsSet);
+    const numClasses = labelsArray.length;
+
+    for (const image of this.images) {
+      const img = new Image();
+      img.src = image.src;
+      await new Promise<void>((resolve) => {
+        img.onload = () => {
+          const tensor = tf.browser.fromPixels(img);
+          const resizedTensor = tf.image.resizeBilinear(tensor, [128, 128]);
+          xs.push(resizedTensor);
+
+          const labelIndex = this.getLabelIndex(image.label);
+          const oneHotLabel = tf.oneHot(
+            tf.tensor1d([labelIndex], 'int32'),
+            numClasses
+          );
+          ys.push(oneHotLabel);
+          resolve();
+        };
+      });
+    }
+
+    const xsTensor = tf.stack(xs);
+    const ysTensor = tf.stack(ys).reshape([-1, numClasses]);
+
+    this.model = tf.sequential();
+    this.model.add(
+      tf.layers.conv2d({
+        inputShape: [128, 128, 3],
+        filters: 32,
+        kernelSize: 3,
+        activation: 'relu',
+      })
+    );
+    this.model.add(tf.layers.maxPooling2d({ poolSize: 2 }));
+    this.model.add(
+      tf.layers.conv2d({ filters: 64, kernelSize: 3, activation: 'relu' })
+    );
+    this.model.add(tf.layers.maxPooling2d({ poolSize: 2 }));
+    this.model.add(tf.layers.flatten());
+    this.model.add(tf.layers.dense({ units: 128, activation: 'relu' }));
+    this.model.add(
+      tf.layers.dense({ units: numClasses, activation: 'softmax' })
+    );
+
+    this.model.compile({
+      optimizer: 'adam',
+      loss: 'categoricalCrossentropy',
+      metrics: ['accuracy'],
+    });
+
+    await this.model.fit(xsTensor, ysTensor, { epochs: 10 });
+
+    console.log('Model trained');
+  }
+
+  getLabelIndex(label: string): number {
+    return this.labels.indexOf(label);
+  }
+}
+ 
+model-options.component.html
+@if(modelOptionsForm) {
+<h2>Model options</h2>
+<p-divider></p-divider>
+<form class="form" [formGroup]="modelOptionsForm">
+  <div class="form-left">
+    <div class="flex">
+      <span class="label">Layers</span>
+      <p-selectButton
+        formControlName="layers"
+        [options]="layersOptions"
+        pTooltip="Number of hidden layers in the model. More layers can learn more complex patterns but can also lead to overfitting and require more computational resources"
+      ></p-selectButton>
+    </div>
+
+    <div class="flex">
+      <span class="label">Rendering</span>
+      <p-selectButton
+        formControlName="rendering"
+        [options]="renderingOptions"
+        pTooltip="The rendering mode of the model"
+      ></p-selectButton>
+    </div>
+
+    <div class="flex">
+      <span class="label">Optimizer</span>
+      <p-dropdown
+        formControlName="optimizer"
+        [options]="optimizers"
+        placeholder="Select an optimizer"
+        pTooltip="Algorithm that will minimize the loss function"
+      ></p-dropdown>
+    </div>
+
+    <div class="flex">
+      <span class="label">Loss function</span>
+      <p-dropdown
+        formControlName="loss"
+        [options]="loss"
+        placeholder="Select an loss function"
+        pTooltip="Function that will be minimized during training"
+      ></p-dropdown>
+    </div>
+  </div>
+
+  <div class="form-right">
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="neurons"> Neurons </label>
+      <p-inputNumber
+        formControlName="neurons"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="neurons"
+        spinnerMode="horizontal"
+        [step]="8"
+        min="8"
+        max="512"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Number of neurons in the hidden layer"
+      />
+    </div>
+
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="epochs"> Epochs </label>
+      <p-inputNumber
+        formControlName="epochs"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="epochs"
+        spinnerMode="horizontal"
+        [step]="1"
+        min="5"
+        max="100"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Number of times the model will see the entire dataset"
+      />
+    </div>
+
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="epochs">
+        Shape horizontal
+      </label>
+      <p-inputNumber
+        formControlName="shapew"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="epochs"
+        spinnerMode="horizontal"
+        [step]="16"
+        min="64"
+        max="1024"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Width of the matrix that represent the image in the model"
+      />
+    </div>
+
+    <div class="flex">
+      <label class="mb-2 block font-bold" for="epochs"> Shape vertical </label>
+      <p-inputNumber
+        formControlName="shapeh"
+        [showButtons]="true"
+        buttonLayout="horizontal"
+        inputId="epochs"
+        spinnerMode="horizontal"
+        [step]="16"
+        min="64"
+        max="1024"
+        decrementButtonClass="p-button-danger"
+        incrementButtonClass="p-button-success"
+        incrementButtonIcon="pi pi-plus"
+        decrementButtonIcon="pi pi-minus"
+        pTooltip="Height of the matrix that represent the image in the model"
+      />
+    </div>
+  </div>
+
+  <app-train-model></app-train-model>
+</form>
+}
+ 
+model-options.component.scss
+form {
+  margin-bottom: 50px;
+  display: flex;
+  gap: 50px;
+  flex-wrap: wrap;
+}
+
+label,
+.label {
+  font-size: 22px;
+}
+
+.flex {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+app-train-model {
+  margin-top: auto;
+}
+ 
+model-options.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ModelOptionsComponent } from './model-options.component';
+
+describe('ModelOptionsComponent', () => {
+  let component: ModelOptionsComponent;
+  let fixture: ComponentFixture<ModelOptionsComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ModelOptionsComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(ModelOptionsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+model-options.component.ts
+import { Component, inject, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { TooltipModule } from 'primeng/tooltip';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { DropdownModule } from 'primeng/dropdown';
+import { DividerModule } from 'primeng/divider';
+import { ModelService } from '../../services/model-service/model.service';
+import { TrainModelComponent } from '../train-model/train-model.component';
+
+@Component({
+  selector: 'app-model-options',
+  standalone: true,
+  imports: [
+    InputNumberModule,
+    ButtonModule,
+    ReactiveFormsModule,
+    TooltipModule,
+    SelectButtonModule,
+    DropdownModule,
+    DividerModule,
+    TrainModelComponent,
+  ],
+  templateUrl: './model-options.component.html',
+  styleUrl: './model-options.component.scss',
+})
+export class ModelOptionsComponent implements OnInit {
+  private fb: FormBuilder = inject(FormBuilder);
+  private modelService: ModelService = inject(ModelService);
+
+  modelOptionsForm = null;
+
+  layersOptions = [
+    { label: '3 (Faster)', value: 3 },
+    { label: '7 (Slower)', value: 7 },
+  ];
+
+  renderingOptions = [
+    { label: 'WebGL', value: 'webgl' },
+    { label: 'WASM', value: 'cpu' },
+  ];
+
+  optimizers = [
+    { label: 'SGD', value: 'sgd' },
+    { label: 'AdaGrad', value: 'adagrad' },
+    { label: 'RMSprop', value: 'rmsprop' },
+    { label: 'Adadelta', value: 'adadelta' },
+    { label: 'Adam', value: 'adam' },
+    { label: 'AdaMax', value: 'adamax' },
+    { label: 'Nadam', value: 'nadam' },
+    { label: 'FTRL', value: 'ftrl' },
+  ];
+
+  loss = [
+    { label: 'Mean Squared Error', value: 'meanSquaredError' },
+    { label: 'Mean Absolute Error', value: 'meanAbsoluteError' },
+    {
+      label: 'Mean Absolute Percentage Error',
+      value: 'meanAbsolutePercentageError',
+    },
+    {
+      label: 'Mean Squared Logarithmic Error',
+      value: 'meanSquaredLogarithmicError',
+    },
+    { label: 'Squared Hinge', value: 'squaredHinge' },
+    { label: 'Hinge', value: 'hinge' },
+    { label: 'Categorical Hinge', value: 'categoricalHinge' },
+    { label: 'Logcosh', value: 'logcosh' },
+    { label: 'Categorical Crossentropy', value: 'categoricalCrossentropy' },
+    {
+      label: 'Sparse Categorical Crossentropy',
+      value: 'sparseCategoricalCrossentropy',
+    },
+    {
+      label: 'Kullback Leibler Divergence',
+      value: 'kullbackLeiblerDivergence',
+    },
+    { label: 'Poisson', value: 'poisson' },
+    { label: 'Cosine Proximity', value: 'cosineProximity' },
+  ];
+
+  ngOnInit(): void {
+    this.initForm();
+  }
+
+  private initForm(): void {
+    this.modelOptionsForm = this.fb.group({
+      neurons: new FormControl<number>(64),
+      epochs: new FormControl<number>(5),
+      shapeh: new FormControl<number>(240),
+      shapew: new FormControl<number>(240),
+      layers: new FormControl<number>(3),
+      rendering: new FormControl<string>('webgl'),
+      optimizer: new FormControl<string>('adam'),
+      loss: new FormControl<string>('categoricalCrossentropy'),
+    });
+
+    this.modelOptionsForm.valueChanges.subscribe((value) => {
+      this.modelService.saveModelOptions(value);
+    });
+    this.modelService.saveModelOptions(this.modelOptionsForm.value);
+  }
+}
+ 
+status-bar.component.html
+<div class="progress">
+  @if($isTraining | async){
+  <p-progressBar mode="indeterminate" [style]="{ height: '6px' }" />
+  }
+</div>
+<div class="bar {{ ($status | async)?.type || '' }}">
+  @if ($status| async) {
+  <p class="status">{{ ($status | async).message }}</p>
+  }
+</div>
+ 
+status-bar.component.scss
+.bar {
+  margin-bottom: 20px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status {
+  text-align: center;
+  color: white;
+  margin: 0;
+  font-size: 22px;
+}
+
+.progress {
+  height: 6px;
+}
+
+.error {
+  background-color: var(--red-500);
+}
+
+.success {
+  background-color: var(--green-500);
+}
+
+.warning {
+  background-color: var(--yellow-500);
+}
+
+.info {
+  background-color: var(--blue-500);
+}
+ 
+status-bar.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { StatusBarComponent } from './status-bar.component';
+
+describe('StatusBarComponent', () => {
+  let component: StatusBarComponent;
+  let fixture: ComponentFixture<StatusBarComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StatusBarComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(StatusBarComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+status-bar.component.ts
+import { AsyncPipe, NgClass } from '@angular/common';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { StatusService } from '../../services/status-service/status.service';
+import { TStatus } from '../../types/status.type';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { ModelService } from '../../services/model-service/model.service';
+import { log } from '@tensorflow/tfjs';
+
+@Component({
+  selector: 'app-status-bar',
+  standalone: true,
+  imports: [AsyncPipe, NgClass, ProgressBarModule],
+  templateUrl: './status-bar.component.html',
+  styleUrl: './status-bar.component.scss',
+})
+export class StatusBarComponent implements OnInit {
+  private statusService: StatusService = inject(StatusService);
+  modelService: ModelService = inject(ModelService);
+
+  $isTraining: Observable<boolean> = this.modelService.$isTraining;
+  $status: Observable<TStatus> = null;
+
+  ngOnInit(): void {
+    this.$status = this.statusService.getStatus();
+
+    this.$isTraining.subscribe((isTraining) => {
+      console.log('isTraining', isTraining);
+    });
+  }
+}
+ 
+test-model.component.html
+<div>
+  <div class="bar">
+    <h1>Model is trainned, now you can load images to test</h1>
+
+    <label for="test-files" class="custom-file-upload"> Upload </label>
+    <input
+      id="test-files"
+      class="file-upload"
+      type="file"
+      (change)="onTestFilesSelected($event)"
+      multiple
+      accept="image/*"
+    />
+  </div>
+
+  <div class="progress">
+    @if(loaded !== total) {
+    <p-progressBar mode="indeterminate" [style]="{ height: '6px' }" />
+    }
+  </div>
+
+  @if(predictions.length > 0){
+  <div class="predictions">
+    <h2>Predictions</h2>
+
+    <div class="list">
+      @for (prediction of predictions; track $index) {
+      <div class="list-element">
+        <span>{{ $index + 1 }}</span>
+        <img [src]="prediction.src" width="100" alt="Loading..." />
+        <p>Predicted Label:</p>
+        <p>{{ prediction.label }}</p>
+
+        <div class="propabilities">
+          @for (propability of prediction.probabilities; track $index) {
+          <div class="prob">
+            <p>{{ propability.label }}:</p>
+
+            <p-progressBar
+              class="pers"
+              [value]="propability.probability * 100 | number : '1.2-2'"
+            />
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+  }
+</div>
+ 
+test-model.component.scss
+.custom-file-upload {
+  align-items: center;
+  text-align: center;
+  height: 45px;
+  background-color: #3b82f6;
+  border: 1px solid #3b82f6;
+  color: #fff;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.predictions {
+  margin-top: 50px;
+  margin-bottom: 20px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 20px;
+
+  &-element {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border: 2px solid #3b82f6;
+    border-radius: 20px;
+    padding: 10px;
+  }
+}
+
+img {
+  height: 200px;
+  width: auto;
+  min-width: 450px;
+  object-fit: contain;
+}
+
+.propabilities {
+  margin-left: 50px;
+  width: 450px;
+}
+
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress {
+  width: 100%;
+  height: 20px;
+}
+
+.prob {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pers {
+  width: 300px;
+}
+ 
+test-model.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { TestModelComponent } from './test-model.component';
+
+describe('TestModelComponent', () => {
+  let component: TestModelComponent;
+  let fixture: ComponentFixture<TestModelComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TestModelComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(TestModelComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+test-model.component.ts
+import { Component, inject } from '@angular/core';
+import * as tf from '@tensorflow/tfjs';
+import { ButtonModule } from 'primeng/button';
+import { Subject } from 'rxjs';
+import { ModelService } from '../../services/model-service/model.service';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
+import { NgZone } from '@angular/core';
+import { ProgressBarModule } from 'primeng/progressbar';
+
+@Component({
+  selector: 'app-test-model',
+  standalone: true,
+  imports: [ButtonModule, AsyncPipe, DecimalPipe, ProgressBarModule],
+  templateUrl: './test-model.component.html',
+  styleUrl: './test-model.component.scss',
+})
+export class TestModelComponent {
+  private ngZone: NgZone = inject(NgZone);
+  private modelService: ModelService = inject(ModelService);
+
+  isLoading: boolean = false;
+  total: number = 0;
+  loaded: number = 0;
+
+  predictions: {
+    src: string;
+    label: string;
+    probabilities: { label: string; probability: number }[];
+  }[] = [];
+  $isModel: Subject<boolean> = this.modelService.$isModel;
+
+  async onTestFilesSelected(event: Event) {
+    this.isLoading = true;
+
+    const input1 = event.target as HTMLInputElement;
+    this.total = input1.files.length;
+    this.loaded = 0;
+
+    this.ngZone.runOutsideAngular(() => {
+      const input = event.target as HTMLInputElement;
+      console.log(input.files);
+
+      if (input.files && this.modelService?.model?.model) {
+        // Ensure that model and labels are loaded
+        if (
+          !this.modelService?.model?.model ||
+          !this.modelService?.model?.labels
+        ) {
+          console.error('Model or labels are not loaded');
+          return;
+        }
+
+        this.predictions = [];
+        for (let i = 0; i < input.files.length; i++) {
+          const file = input.files[i];
+          const reader = new FileReader();
+          reader.onload = async (e: any) => {
+            const img = new Image();
+            img.src = e.target.result;
+
+            await new Promise<void>((resolve) => {
+              img.onload = async () => {
+                const tensor = tf.browser.fromPixels(img);
+
+                // Resizing the image to match the model's input shape
+                const resizedTensor = tf.image
+                  .resizeBilinear(tensor, [
+                    this.modelService.model.options.shapeh,
+                    this.modelService.model.options.shapew,
+                  ])
+                  .div(tf.scalar(255)) // Normalize to [0, 1] range (important for consistency)
+                  .expandDims(0); // Add batch dimension
+
+                const prediction = this.modelService?.model?.model.predict(
+                  resizedTensor
+                ) as tf.Tensor;
+
+                // Get raw prediction probabilities (softmax output)
+                const predictionData = await prediction.data();
+
+                // Display probabilities for all labels
+                const probabilities = Array.from(predictionData);
+                const labelProbabilities: {
+                  label: string;
+                  probability: number;
+                }[] = this.modelService?.model?.labels.map((label, index) => ({
+                  label: label,
+                  probability: probabilities[index],
+                }));
+
+                // Find the label with the highest probability
+                const predictedIndex = probabilities.indexOf(
+                  Math.max(...probabilities)
+                );
+                const predictedLabel =
+                  this.modelService?.model?.labels[predictedIndex];
+
+                // Add to the predictions array
+                this.ngZone.run(() => {
+                  this.predictions.push({
+                    src: e.target.result,
+                    label: predictedLabel,
+                    probabilities: labelProbabilities,
+                  });
+                });
+
+                console.log('Predictions:', this.predictions);
+
+                this.ngZone.run(() => {
+                  this.loaded++;
+                });
+
+                resolve();
+              };
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  }
+}
+ 
+train-model.component.html
+<div class="train">
+  <p-button
+    (click)="trainModel()"
+    label="Train Model"
+    [disabled]="isTrainingDisable()"
+  ></p-button>
+</div>
+ 
+train-model.component.scss
+.train {
+  display: flex;
+  gap: 20px;
+}
+ 
+train-model.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { TrainModelComponent } from './train-model.component';
+
+describe('TrainModelComponent', () => {
+  let component: TrainModelComponent;
+  let fixture: ComponentFixture<TrainModelComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TrainModelComponent]
+    })
+    .compileComponents();
+    
+    fixture = TestBed.createComponent(TrainModelComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+ 
+train-model.component.ts
+import { Component, inject, Input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { InputTextModule } from 'primeng/inputtext';
+import { StatusService } from '../../services/status-service/status.service';
+import { ModelService } from '../../services/model-service/model.service';
+
+@Component({
+  selector: 'app-train-model',
+  standalone: true,
+  imports: [
+    ButtonModule,
+    InputTextModule,
+    FloatLabelModule,
+    FormsModule,
+    DividerModule,
+  ],
+  templateUrl: './train-model.component.html',
+  styleUrl: './train-model.component.scss',
+})
+export class TrainModelComponent {
+  @Input() labels: string[] = ['1', '2'];
+  @Input() images: { src: string; label: string }[] = [];
+
+  private modelService: ModelService = inject(ModelService);
+
+  trainModel(): void {
+    this.modelService.trainModel();
+  }
+
+  isTrainingDisable(): boolean {
+    this.labels = this.modelService.labels;
+    this.images = this.modelService.images;
+
+    if (this.labels.some((label) => !label)) {
+      return true;
+    }
+
+    if (this.labels.length < 2) {
+      return true;
+    }
+
+    return false;
+  }
+}
+ 
+logger.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+
+import { LoggerService } from './logger.service';
+
+describe('LoggerService', () => {
+  let service: LoggerService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(LoggerService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+ 
+logger.service.ts
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Subject } from 'rxjs';
+
+export interface ILog {
+  message: string;
+  timestamp: Date;
+}
+
+@Injectable({
+  providedIn: 'root',
+})
+export class LoggerService {
+  private logs: ILog[] = [];
+
+  $logs: BehaviorSubject<ILog[]> = new BehaviorSubject([]);
+
+  pushLog(message: string): void {
+    const log: ILog = {
+      message,
+      timestamp: new Date(),
+    };
+
+    this.logs.push(log);
+    this.$logs.next(this.logs);
+  }
+}
+ 
+model.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+
+import { ModelService } from './model.service';
+
+describe('ModelService', () => {
+  let service: ModelService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(ModelService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+ 
+model.service.ts
+import { inject, Injectable, NgZone } from '@angular/core';
+import * as tf from '@tensorflow/tfjs';
+import { Subject, take } from 'rxjs';
+import { TModelData } from '../../types/model.type';
+import { TModelOptions } from '../../types/model-options.type';
+import { LoggerService } from '../logger-service/logger.service';
+import { StatusService } from '../status-service/status.service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ModelService {
+  private ngZone: NgZone = inject(NgZone);
+  private loggerService: LoggerService = inject(LoggerService);
+  private statusService: StatusService = inject(StatusService);
+
+  private modelOptions: TModelOptions = null;
+  images: { src: string; label: string }[] = [];
+  labels: string[] = [];
+  model: TModelData = null;
+
+  $isModel = new Subject<boolean>();
+  $isTraining = new Subject<boolean>();
+
+  saveModelOptions(modelOptions: TModelOptions): void {
+    this.modelOptions = modelOptions;
+  }
+
+  getModelOptions(): any {
+    return this.modelOptions;
+  }
+
+  saveImages(images: { src: string; label: string }[]): void {
+    this.images = images;
+    this.labels = Array.from(new Set(this.images.map((image) => image.label)));
+  }
+
+  trainModel(): void {
+    this.$isTraining.next(true);
+    this.$isModel.next(null);
+    this.statusService.setStatus(
+      'Training model... It may take some time',
+      'info'
+    );
+
+    try {
+      this.ngZone.runOutsideAngular(() => {
+        this.trainOptimizedModel().then(() => {
+          this.$isTraining.next(false);
+          this.statusService.setStatus('Model trained', 'success');
+        });
+      });
+    } catch (error) {
+      this.$isTraining.next(false);
+      this.$isModel.next(false);
+      this.logStatus(`Error training model`);
+    }
+  }
+
+  async trainOptimizedModel(): Promise<void> {
+    this.logStatus('Start training optimized model');
+    const startTime = Date.now();
+
+    const model = this.buildModel();
+    const numClasses = this.prepareLabelSet();
+
+    const { xs, ys } = await this.loadAndProcessImages(numClasses);
+    const xsTensor = tf.stack(xs);
+    const ysTensor = tf.stack(ys).reshape([-1, numClasses]);
+
+    this.logStatus('Model created, compiling...');
+    this.compileModel(model);
+
+    this.logStatus('Model compiled, training...');
+    await this.train(model, xsTensor, ysTensor);
+
+    this.model = { model, labels: this.labels, options: this.modelOptions };
+    this.$isModel.next(true);
+    this.logStatus(`Model trained, time = ${Date.now() - startTime}ms`);
+  }
+
+  private buildModel(): tf.Sequential {
+    const model = tf.sequential();
+    model.add(
+      tf.layers.conv2d({
+        inputShape: [this.modelOptions.shapeh, this.modelOptions.shapew, 3],
+        filters: 32,
+        kernelSize: 3,
+        activation: 'relu',
+      })
+    );
+    model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
+    model.add(
+      tf.layers.conv2d({ filters: 64, kernelSize: 3, activation: 'relu' })
+    );
+    model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
+    model.add(tf.layers.flatten());
+    model.add(
+      tf.layers.dense({ units: this.modelOptions.neurons, activation: 'relu' })
+    );
+    model.add(
+      tf.layers.dense({ units: this.prepareLabelSet(), activation: 'softmax' })
+    );
+    return model;
+  }
+
+  private prepareLabelSet(): number {
+    const labelsSet = new Set<string>();
+    this.images.forEach((image) => labelsSet.add(image.label));
+    this.labels = Array.from(labelsSet);
+    return this.labels.length;
+  }
+
+  private async loadAndProcessImages(
+    numClasses: number
+  ): Promise<{ xs: tf.Tensor[]; ys: tf.Tensor[] }> {
+    const xs: tf.Tensor[] = [];
+    const ys: tf.Tensor[] = [];
+
+    const imagePromises = this.images.map((image, index) =>
+      this.processImage(image, index, xs, ys, numClasses)
+    );
+    await Promise.all(imagePromises);
+
+    this.logStatus('All images loaded');
+    return { xs, ys };
+  }
+
+  private async processImage(
+    image: any,
+    index: number,
+    xs: tf.Tensor[],
+    ys: tf.Tensor[],
+    numClasses: number
+  ): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.src = image.src;
+      img.onload = () => {
+        const tensor = tf.browser.fromPixels(img);
+        const resizedTensor = tf.image.resizeBilinear(tensor, [
+          this.modelOptions.shapeh,
+          this.modelOptions.shapew,
+        ]);
+        const normalizedTensor = resizedTensor.div(tf.scalar(255));
+
+        xs.push(normalizedTensor);
+
+        const labelIndex = this.getLabelIndex(image.label);
+        const oneHotLabel = tf.oneHot(
+          tf.tensor1d([labelIndex], 'int32'),
+          numClasses
+        );
+        ys.push(oneHotLabel);
+
+        resolve();
+        this.logStatus(`Image ${index + 1} loaded`);
+      };
+    });
+  }
+
+  private compileModel(model: tf.Sequential): void {
+    model.compile({
+      optimizer: tf.train.adam(0.001),
+      loss: this.modelOptions.loss,
+      metrics: ['accuracy'],
+    });
+  }
+
+  private async train(
+    model: tf.Sequential,
+    xsTensor: tf.Tensor,
+    ysTensor: tf.Tensor
+  ): Promise<void> {
+    try {
+      await model.fit(xsTensor, ysTensor, {
+        epochs: this.modelOptions.epochs,
+        batchSize: 64,
+      });
+    } catch (error) {
+      this.processError();
+      throw new Error('Error training model');
+    }
+  }
+
+  processError(): void {
+    this.ngZone.run(() => {
+      this.$isTraining.next(false);
+      this.$isModel.next(false);
+      this.logStatus(`Error training model`);
+      this.statusService.setStatus(
+        'Error training model. Try another browser or device',
+        'error'
+      );
+    });
+  }
+
+  logStatus(message: string): void {
+    this.ngZone.run(() => {
+      this.loggerService.pushLog(message);
+    });
+  }
+
+  getLabelIndex(label: string): number {
+    return this.labels.indexOf(label);
+  }
+}
+ 
+status.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+
+import { StatusService } from './status.service';
+
+describe('StatusService', () => {
+  let service: StatusService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(StatusService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+ 
+status.service.ts
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { TStatus, TStatusType } from '../../types/status.type';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class StatusService {
+  $status: BehaviorSubject<TStatus> = new BehaviorSubject({
+    type: 'info',
+    message: 'Loading...',
+  });
+
+  private readonly STATUS_MAPPING = {
+    NOT_ENOUGH_LABELS:
+      'Need at least 2 non empty datasets with unique labels for training',
+    NOT_ENOUGH_IMAGES:
+      'It is recomended to use at least 5 images of each type for training',
+    LABELS_SHOULD_NOT_BE_EMPTY: 'Labels cant be blank',
+    MODEL_NAME_SHOULD_NOT_BE_EMPTY: 'Model name should not be empty',
+    READY: 'Ready for training',
+    MODEL_TRAINED: 'Model has been trained',
+  };
+
+  setStatus(mes: string, type: TStatusType): void {
+    const status = {
+      message: (this.STATUS_MAPPING[mes] as string) || mes,
+      type,
+    };
+
+    this.$status.next(status);
+  }
+
+  getStatus(): Observable<TStatus> {
+    return this.$status.asObservable();
+  }
+}
+ 
+model-options.type.ts
+export type TModelOptions = {
+  neurons: number;
+  epochs: number;
+  shapeh: number;
+  shapew: number;
+  layers: number;
+  rendering: string;
+  optimizer: string;
+  loss: string;
+};
+ 
+model.type.ts
+import * as tf from '@tensorflow/tfjs';
+import { TModelOptions } from './model-options.type';
+
+export type TModelData = {
+  model: tf.Sequential;
+  options: TModelOptions;
+  labels: string[];
+};
+ 
+status.type.ts
+export type TStatusType = 'success' | 'error' | 'warning' | 'info';
+
+export type TStatus = {
+  type: TStatusType;
+  message: string;
+};
+ 
+favicon.ico
+    00     ¨%  6          ¨  Þ%       h  †6  (   0   `           $                                                                                                          Ið'J
+ó²J
+ó²Ið'                                                                                                                                                                        SòEôˆF	ôþH
+öÿL	õÿMòÿPó™Sò                                                                                                                                                        Ì ÏKïcDòéF	ôþH
+öÿL	õÿL	õÿQôÿQôÿTòîZðwŽ÷                                                                                                                                            bîFE	ïÒF	ôþF	ôþF	ôþH
+öÿL	õÿL	õÿQôÿQôÿVòÿ\îÿcêØbîF                                                                                                                                Ið'J
+ó²MòÿMòÿF	ôþF	ôþH
+öÿH
+öÿL	õÿQôÿQôÿVòÿYðÿaíÿféÿmæÿsâ»{ä*                                                                                                                SòSí‘QïùMòÿMòÿMòÿL	õÿL	õÿH
+öÿL	õÿL	õÿQôÿQôÿVòÿ\îÿféÿi	éÿqãÿvàÿ{Þÿ…×™žÕ                                                                                                    KïcZîïVñÿVñÿVñÿVñÿPõÿPõÿPõÿPõÿPõÿQôÿQôÿVòÿYðÿaíÿféÿmæÿqãÿ{Þÿ‚ÙÿŒ
+Óÿ”Îí®ØX                                                                                                Zî…\ñÿ\ñÿ\ñÿVñÿVñÿVöÿVöÿVöÿPõÿPõÿQôÿQôÿVòÿ\îÿaíÿi	éÿqãÿvàÿ{Þÿ‚ÙÿŒ
+Óÿ–ÌÿŸÇ                                                                                                ð_ðù\ñÿ\ñÿ\ñÿ\öÿ\öÿVöÿVöÿVöÿVöÿVòÿVòÿYðÿaíÿféÿmæÿqãÿ{Þÿ‚ÙÿŒ
+Óÿ–ÌÿÈüžÕ                                                                                                    bñ±dñÿdñÿböÿ\öÿ\öÿ\öÿ\öÿ[õÿ[õÿ[õÿ[õÿaíÿaíÿi	éÿqãÿvàÿ{Þÿ‚ÙÿŒ
+Óÿ–Ìÿ¡Ä¥                                                                                                        bîFgõÿgõÿe÷ÿböÿböÿböÿböÿaôÿaôÿ_òÿ_òÿaíÿi	éÿmæÿqãÿvàÿ‚ÙÿŒ
+Óÿ–ÌÿÈü³Ì:                                                                                                            ióØgõÿgõÿgõÿe÷ÿe÷ÿböÿböÿaôÿaôÿdñÿi	éÿmæÿqãÿvàÿ{Þÿ‚ÙÿŒ
+Óÿ–Ìÿ ÆÕÌ Ï                                                                                                            hòQh÷—h÷—h÷—h÷—h÷—h÷—hò‘hò‘hò‘hò‘uæŒuæŒuæŒuæŒ‰	Õˆ‰	Õˆ‰	ÕˆŸÇ¦ÀE                                                                                                                                                                                                                                                                    ó7                                                                                                                                                                íŽ&                    Sòƒ ð¿                                                                                                                                                                ð‰™ð
+ˆ                {ä*–%ôýqî-                                                                                                                                                        é•ï€ùé•                bîF›'õÿƒó¯                                                                                                                                                        òyŒð	~ÿóy*                {ñY›'õÿ–%ôýð                                                                                                                                                ð€ñ	|ðð{ÿñ‚6                ‹ öj¡)öÿ›'õÿ‚ñ¡                                                                                                                                                ð†|ð	~ÿð{ÿñwK                „ó€¡)öÿ¡)öÿ›&ôó}õ                                        }õ… ÷ê‰ôô‰ôô‰ôôíóíó•çò•çò›ßò¥Øñ¥Øñ®Íæ×¸                                        ð
+ˆí€éð{ÿòwÿï[                †ó“§+øÿ§+øÿ¡)öÿ†ó“                                            ƒó¯!õÿ!õÿ“ ðÿ“ ðÿ—éÿ—éÿŸäÿ¥Þÿ¥Þÿ®Õÿº Ðž                                            ñƒlð	~ÿð{ÿòwÿñƒl                —!ô¦¬,ùÿ§+øÿ§+øÿ›&ôóŽ÷                                        ó7!õÿ“ ðÿ“ ðÿ™!îÿ›éÿ›éÿŸäÿ¥Þÿ®Õÿ®Õÿ³Ì:                                        Ì Ïì
+Ûð	~ÿòwÿòwÿór{                ‘!óº¬,ùÿ¬,ùÿ¬,ùÿ§+øÿ„ó€                                            ‘ôÕ–%ôý™!îÿ™!îÿ›éÿŸäÿ¥Þÿ­!Þÿ®Õÿ½$ØÊ                                            ï[ñƒÿð{ÿòwÿôrÿòyŒ                ›%øÈ±-úÿ±-úÿ¬,ùÿ¬,ùÿŸ&øäÌ Ï                                        “ôoŸ#ïÿŸ#ïÿŸ#ïÿ¤!èÿ¤!èÿ­!Þÿ­!Þÿµ#Úÿ¶Ël                                            ë‰Ïñƒÿð	~ÿòwÿôrÿõn›                %öØ´.ûÿ´.ûÿ±-úÿ¬,ùÿ¬,ùÿ‹ öj                                        }õ›&ôóŸ#ïÿ¦%íÿ¤!èÿ«$èÿ­!Þÿµ#Úÿ¸"Õñ×¸                                        ïIð‰ÿñƒÿð	~ÿòwÿôrÿõ k«                Ÿ&øä¸.üÿ´.ûÿ´.ûÿ±-úÿ±-úÿŸ&øä                                            —!ô¦¦%íÿ¦%íÿ«$èÿ±%äÿµ#Úÿµ#Úÿº Ðž                                            îÁðŒÿñ†ÿð	~ÿòwÿôrÿöoÅ                ³)ûë»/üÿ¸.üÿ¸.üÿ´.ûÿ´.ûÿ±-úÿ’ øS                                        ™ð)¦%íÿ«$èÿ«$èÿ±%äÿµ#Úÿ½&ÜÿÀ!Õ*                                        ñ‚6í“ÿðŒÿñ†ÿòÿó	|ÿôrÿöoÅ                ´,ùö¿/ýÿ»/üÿ»/üÿ¸.üÿµ.ýÿ´.ûÿ'úÒ                                            ¨#óË±'êÿ±%äÿ¹'ãÿ½&Üÿ½$ØÊ                                            íš­í“ÿðŒÿð‰ÿòÿó	|ÿòwÿòtÞ                ¼-üûÂ0ýÿ¿/ýÿ¿/ýÿ»/üÿ¸.üÿ¸.üÿµ.ýÿ”ù=                                        §ìe±'êÿ¹'ãÿ¹'ãÿ½&ÜÿÂ!Õ]                                        íŽ&ì›þí“ÿïÿð‰ÿñƒÿó	|ÿó	|ÿñ	|ð            Ì ÏÆ0þÿÆ0þÿÂ0ýÿÂ0ýÿ¿/ýÿ¿/ýÿ»/üÿ¸.üÿ›%øÈ                                        Ì Ï»'ìâ¹'ãÿ¿*äþÂ'ÛíŽ÷                                        íš­ì›þî˜ÿïÿð‰ÿñƒÿòÿó	|ÿó	|ÿÌ Ï        ðÌ0þÿÊ0ýÿÆ0þÿÆ0þÿÂ0ýÿ¿/ýÿ¿/ýÿ»/üÿµ.ýÿŒù*                                        ²#ã™¿*äþÃ*áþº Ðž                                        é•ê¡øì›þî˜ÿïÿðŒÿñ†ÿòÿòÿó	|ÿð€        ó7Ï0þÿÌ0þÿÊ0ýÿÆ0þÿÆ0þÿÂ0ýÿÂ0ýÿ¿/ýÿ¿/ýÿ¢#úº                                        ¸ Ø ¿*äþÃ*áþ¸ Ø                                         ë¢—ì£ÿíŸÿî˜ÿð“ÿðŒÿð‰ÿñ†ÿñƒÿòÿíŽ&        ’ øSÒ0þÿÏ0þÿÌ0þÿÌ0þÿÈ0þÿÆ0þÿÂ0ýÿÂ0ýÿ¿/ýÿ¼-üûð                                        ½$ØÊ½$ØÊ                                        ×¸é!¬ðì£ÿíŸÿî›ÿð“ÿïÿðŒÿð‰ÿñ†ÿñƒÿñ‚6        “ôoÖ1ÿÿÒ0þÿÏ0þÿÏ0þÿÌ0þÿÈ0þÿÆ0þÿÆ0þÿÂ0ýÿÂ0ýÿ—!ô¦                                        ®ØXÂ!Õ]                                        é ¨‰ë ¬ÿì§ÿíŸÿî›ÿï–ÿïÿïÿðŒÿð‰ÿñ†ÿïI        œøƒÙ1ÿÿÖ1ÿÿÒ0þÿÒ0þÿÏ0þÿÌ0þÿÊ0ýÿÆ0þÿÆ0þÿÂ0ýÿ¼+ûö}õ                                                                                ð
+ˆé!¬ðë ¬ÿì§ÿì£ÿíŸÿî˜ÿð“ÿð“ÿïÿðŒÿð‰ÿï[        ¡ ÷–Ù1ÿÿÙ1ÿÿÖ1ÿÿÔ0þÿÒ0þÿÏ0þÿÌ0þÿÊ0ýÿÊ0ýÿÆ0þÿÆ0þÿ¡ ÷–                                                                                è!«zê"²ÿê!¯ÿëªÿì£ÿíŸÿî›ÿî˜ÿï–ÿð“ÿïÿðŒÿñƒl        ¬"ö®Ù1ÿÿÙ1ÿÿÙ1ÿÿÖ1ÿÿÖ1ÿÿÒ0þÿÏ0þÿÌ0þÿÌ0þÿÊ0ýÿÈ0þÿ¼+ûöŽ÷                                                                        Ì Ïæ%µäé#¶ÿê!¯ÿë ¬ÿì§ÿíŸÿíŸÿî›ÿî˜ÿï–ÿð“ÿïÿð†|        ¢#úºÙ1ÿÿÙ1ÿÿÙ1ÿÿÙ1ÿÿÖ1ÿÿÔ0þÿÒ0þÿÏ0þÿÏ0þÿÌ0þÿÊ0ýÿÊ0ýÿ³!ï€                                                                        å ºmè%ºÿé#¶ÿê"²ÿë ¬ÿì§ÿì£ÿíŸÿíŸÿî›ÿî˜ÿï–ÿð“ÿð‰™        ¨#óËÙ1ÿÿÙ1ÿÿÙ1ÿÿÙ1ÿÿÙ1ÿÿÖ1ÿÿÖ1ÿÿÒ0þÿÒ0þÿÏ0þÿÏ0þÿÌ0þÿ¼*öí                                                                        å&¼Öç'½ÿè%ºÿê"²ÿê!¯ÿëªÿì§ÿì£ÿíŸÿíŸÿî›ÿî˜ÿï–ÿð‰™        Ž÷œøƒ¼+ûöÙ1ÿÿÙ1ÿÿÙ1ÿÿÙ1ÿÿÙ1ÿÿÖ1ÿÿÒ0þÿÒ0þÿÏ0þÿÐ0üþÐ0üþ§ìe                                                                å$²Oæ'Áþç'½ÿè%ºÿé#¶ÿê"²ÿë ¬ÿëªÿì§ÿì£ÿì£ÿíŸÿîÙñƒlð
+ˆ                    “ôo³)ûëÙ1ÿÿÙ1ÿÿÙ1ÿÿÙ1ÿÿÖ1ÿÿÔ0þÿÓ0üÿÒ0þÿÐ0üþ¾(ôã                                                                å&¼Öå)Æÿæ'Áþç'½ÿé#¶ÿê"²ÿê!¯ÿë ¬ÿëªÿì§ÿîÙí–aÌ Ï                                    ’ øSµ&üÝÖ1ÿÿÙ1ÿÿÙ1ÿÿ×1þÿÔ0þÿÔ0þÿÓ0üÿÐ0üþ®ØX                                                        ìª:ä+Ìÿå)Æÿæ'Áþç'½ÿè%ºÿé#¶ÿê"²ÿê!¯ÿë¨ÆïI                                                        ”ù=³%ùÐÔ0þÿÙ1ÿÿ×1þÿ×1þÿÔ0þÿÓ0üÿ»'ìâ                                                        æ'ÁÅä+Ìÿå)Æÿå)Æÿæ'Áþè%ºÿé#¶ÿë¨Æìª:                                                                        ™ð)µ$öÀÓ0üÿ×1þÿ×1þÿ×1þÿÓ0üÿ³Ì:                                                ã"µ-ã,Òÿä+Ìÿä+Ìÿå)Æÿæ'Áþê®´íŽ&                                                                                        žÕ¬"ö®Ð0üþ×1þÿÖ1ûÿÆ&ìÊ                                                å'Ä¹ã,Òÿã,Òÿå)Èõç ¸ é•                                                                                                        Ž÷³!ï€Î+õóÖ1ûÿÀ!Õ*                                        í$¿â-Öûã+Îðç ¸ ×¸                                                                                                                        Ì ÏÆ#â}Ê$ßx                                        å ºmå ºmÌ Ï                                                                ÿÿþÿÿ  ÿÿøÿÿ  ÿÿðÿÿ  ÿÿÀÿÿ  ÿÿ  ÿÿ  ÿü  ?ÿ  ÿø  ÿ  ÿð  ÿ  ÿø  ÿ  ÿø  ÿ  ÿü  ?ÿ  ÿü  ?ÿ  ÿþ  ÿ  ÿÿÿÿÿÿ  ÿÿÿÿÿÿ  ïÿÿÿÿ÷  ïÿÿÿÿ÷  çÿÿÿÿç  çÿÿÿÿç  ãÿÿÿÿç  ÃÿÀÿÇ  ÁÿÀÿÇ  Áÿàÿ‡  Àÿàÿƒ  Àÿðÿ  Àÿðÿ  Àðþ  Àøþ  À?øü  À?ü?ü  Àü?ø  Àü?ø  Àþð  Àþð  Àÿÿà  €ÿÿà  €ÿÿà  €ÿÿÀ  €ÿÿÀ  €ÿÿ€  Àÿÿ€  ø ÿÿ   þ ÿÿ   ÿ€þÿ  ÿàþÿ  ÿø?üÿ  ÿþ?üÿ  ÿÿÿÿÿÿ  (       @                                                                                     Jò'I	õµI	õµJò'                                                                                                        \ðDòˆF	ôøH
+öÿL	õÿQóûUò™vó                                                                                        l ÿF
+îjF	ðêDóÿH
+öÿL	õÿOôÿSóÿXðÿbëîk	åw€ë                                                                            RîKPîÖLñÿLñÿL	õÿH
+öÿL	õÿOôÿSóÿ]îÿféÿpãÿzÞÙ‡	ÕU                                                                    Xì¢YîÿUñÿUñÿPõÿPõÿPõÿOôÿSóÿXðÿbëÿkæÿtáÿ~ÛÿŽ
+ÒÿœÈ˜                                                                \í^ñÿ^ñÿZõÿZõÿV÷ÿV÷ÿVóÿVòÿ]îÿféÿpãÿyÞÿ†	×ÿ”Íÿ¢Âq                                                                vófòöaôÿaôÿ]÷ÿ]÷ÿZõÿ]óÿ]óÿbëÿkæÿtáÿ~ÛÿŽ
+Òÿ›ÈöÍ¡                                                                    hó¬gõÿgõÿcøÿcøÿbôÿbôÿfïÿlêÿq
+åÿyÞÿ†	×ÿ”Íÿ¢Å                                                                        gñ%h÷ch÷ch÷ceô`g÷^kñ[kñ[xíY~ßW~ßW	ÒU™ÉU±Ä                                            Œñ                                                                                                        Í¡            \ðñŸ                                                                                                        ï‚~ìŠ        yò(“%ôö\ð                                                                                                ìŠï
+€êõ
+z        zïAœ(õÿ€ï                                                                                                î‚lñ	}ÿóv)        xíY£*÷ÿ™%öí€ë                        l ÿøª„ó®†ï­ŽéªŽéª™â§ ×¦©Ðžã «                        ã «ï€Þðzÿòr:        †ñp¨+øÿ£*÷ÿƒõ}                            † ÷¾‘ ñÿ‘ ñÿ•ëÿšçÿ¡ßÿª×ÿ±Í´                            ñyZñ	}ÿñwÿõsI        ‰ò†¯,ùÿ¨+øÿ™%öíÝ Á                        Š úT—"ñÿ—"ñÿŸ!êÿ¡åÿ©Ýÿ±Õÿ½ ÍG                            ðƒÑðzÿótÿñyZ        ó›³.úÿ¯,ùÿ«-ùÿˆ"øi                            ›$õáŸ#îÿŸ!êÿ¨!äÿ°"Üÿ·!ÔàÝ Á                        ë‹Kñƒÿñ	}ÿótÿõ lj        • õ®·.ûÿ³.úÿ¯,ùÿ›$õá                            —î‰¥$îÿ©$ëü¯$âÿ·%ßÿÀ#Ó€                            ëŽÄð‡ÿñ	}ÿótÿõ mz        ›#ö¿¼/ýÿ¸/üÿ·.ûÿ³.úÿŠ úT                        vó©$ëü¯%èÿ·%ßÿ»%Ùù±Ä                        ê›;ï‘ÿð‡ÿñ	}ÿótÿôqŒ        ¡%ùÌÂ0ýÿ¿/ýÿ¸/üÿ¸/üÿž)úÕ                            ©!é·´(çÿ·%ßÿ½%Ô³                            í™·ï‘ÿðŒÿñƒÿózÿôtž        ª&øÝÇ0ýÿÂ0ýÿ¿/ýÿ¼/ýÿ¸/üÿ— ù>                        ª#äBº*æÿÀ)àÿ½ ÍG                        í¡*ëœýï”ÿðŒÿñƒÿñ	}ÿòz°        ±'úéË0þÿÇ0ýÿÂ0ýÿ¿/ýÿ¿/ýÿ¡%ùÌ                            »(âÞÁ(ÛÞ                            ì¡«íŸÿï–ÿðŒÿð‡ÿñƒÿóÁ        º*ûóÐ/þÿË0þÿÈ1þÿÅ0þÿÂ0ýÿ¼/ýÿ ô+                        »$ÝÀ#Ó€                        æªë ¨ùíŸÿî™ÿï‘ÿðŒÿð‡ÿðƒÑ        Ä-ýûÔ1ÿÿÐ/þÿÎ1þÿË0þÿÇ0ýÿÂ0ýÿ¤%ø¼                        ÝÅ¤ê                        ê ªŸë«ÿí¢ÿîšÿï”ÿï‘ÿðŒÿð‡â        Ð/þÿÙ1ÿÿÔ1ÿÿÒ1þÿÎ1þÿË0þÿÇ0ýÿÄ-ýûŒñ                                                á¶è#³õê!¯ÿì§ÿíŸÿî™ÿï”ÿï‘ÿðï        Ö1ÿÿÙ1ÿÿÙ1ÿÿÖ1ÿÿÒ1þÿÎ1þÿË0þÿÊ0üÿ­$õ«                                                è#±“è#·ÿê!¯ÿì§ÿí¢ÿíŸÿîšÿï–ÿï‘ÿÝ Á¤êÃ+ûùÙ1ÿÿÙ1ÿÿÙ1ÿÿ×0ÿÿÒ1þÿÐ/þÿÎ1þÿÃ+ûù¤ê                                        ÝÅæ&½ñè%ºÿé"´ÿë«ÿì§ÿí¢ÿíŸÿîšÿï”ÝìŠ        š"új¸(ýèÙ1ÿÿÙ1ÿÿ×0ÿÿÔ1ÿÿÒ1þÿÎ1þÿ²!ð™                                        è$¶…å)Åÿç'¾ÿè#·ÿê!¯ÿë«ÿì§ÿížÕì—`Ý Á                    › ùYµ%üÝ×0ÿÿ×0ÿÿÔ1ÿÿÔ0ýÿÉ-øöl ÿ                                Ý Áå(Åêå)Åÿç'¾ÿè%ºÿé"´ÿë¨ÌîžL                                        — ù>·%øÐÔ0ýÿÔ1ÿÿÔ0ýÿ¾#è…                                å#»tä,Ïýå*Éÿæ&Âüë °Âê›;                                                         ô+¼%ò¿Ò/ûýÎ+óñ                                ã)Ìää,Ïýè!¹¹í¡*                                                                        ÂàÈ$é°Ê'ßH                        â%¹>ä$À¢á¶                                        ÿþÿÿøÿÿðÿÿÀÿÿ  ÿÿ€ÿÿ€ÿÿ€ÿÿÿÿÿÿÿÿÿßÿÿÿßÿÿûÏÿÿûÏðóÏðó‡øã‡øãƒøÃƒü?Áü?þ€þ€ÿ€þ€þ€?ü€?üàøøøþøÿñÿÿï÷ÿ(                                                            @ì(FõµNô¶Wó)                                        QäJíŽIóøJ
+öÿQóÿ_ìûsã™†Î                                [ïÊXñÿTõÿRôÿVòÿiçÿ|Ýÿ˜ÊÂ                                còydõÿa÷ÿ_ôÿeîÿrâÿ‰
+Ôÿ¥Ài                    €+ÿ        ]èg÷>f÷<gò9vè8‚Ý5–
+Í3¿ ¿        ÿ €    wîyï|                                                î…\ÿ €€ò(“$ôé  ÿ          ÿyõg…ëfåb Ô^ÿ ÿ        ÿ ÿï
+~Òõ pƒóB¨,÷ÿ„õj            Œ ôÎ– íÿ âÿ°ÐÅ            î…Kñyÿó p)ˆñ^³.ùÿ›'øá            ñj£$ìÿ¯"ßÿ¿#Í`            î‰Åòwÿö k9ôw¼/ûÿ¶/üÿˆ#ùX        f ÿ­&éíº%ÜïÛ$¶        ëš?ïŒÿó	{ÿñtK• öÇ0ýÿ¿0ýÿ¤(ûØ            ³#â À$Õ            êž¾î‘ÿó‚ÿòz`  ù§Ð0þÿÈ1þÿÂ0ýÿ—÷B        º"Ý%Ä'Ë'        ç"¨5ê¦þî–ÿðŒÿòu¥"øºÙ1ÿÿÒ0þÿË1þÿ¯&øÎ                        é#±·ê «ÿížÿï–ÿîŠ‰–÷a½)þðÙ1ÿÿÓ1þÿÍ0üþª ê0                ë!·'è(¾ûê"±ÿì§ÿîšÒðD        ŸüZº%ùÝÕ0ýÿÀ&ïÃ                å%¿²æ(Äþé®ÏïœP                        °îJÅ&íËÉ(×        á-´å$Áºê«=                þ  ø  ð  ø  ÿÿ  ÿÿ  ¿ý  ¼=  žy  žy  q  ñ  à  ‡á  ãÇ  ûß   
+index.html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ImageClassifier</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+ 
+main.ts
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { AppComponent } from './app/app.component';
+
+bootstrapApplication(AppComponent, appConfig)
+  .catch((err) => console.error(err));
+ 
+print.sh
+#!/bin/bash
+
+# Function to recursively print file content
+print_files_content() {
+    local dir="$1"
+    for file in "$dir"/*; do
+        if [ -d "$file" ]; then
+            # If it's a directory, call the function recursively
+            print_files_content "$file"
+        elif [ -f "$file" ]; then
+            # If it's a file, print its name and content
+            echo "$(basename "$file")"
+            cat "$file"
+            echo -e " "
+        fi
+    done
+}
+
+# Call the function on the current directory
+print_files_content "$(pwd)"
+ 
+styles.scss
+@import "primeng/resources/themes/lara-light-blue/theme.css";
+@import "primeng/resources/primeng.css";
+@import "primeicons/primeicons.css";
+
+/*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
+
+/* Document
+   ========================================================================== */
+
+/**
+ * 1. Correct the line height in all browsers.
+ * 2. Prevent adjustments of font size after orientation changes in iOS.
+ */
+
+html {
+  line-height: 1.15; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+}
+
+/* Sections
+   ========================================================================== */
+
+/**
+ * Remove the margin in all browsers.
+ */
+
+body {
+  margin: 0;
+}
+
+/**
+ * Render the `main` element consistently in IE.
+ */
+
+main {
+  display: block;
+}
+
+/**
+ * Correct the font size and margin on `h1` elements within `section` and
+ * `article` contexts in Chrome, Firefox, and Safari.
+ */
+
+h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+/* Grouping content
+   ========================================================================== */
+
+/**
+ * 1. Add the correct box sizing in Firefox.
+ * 2. Show the overflow in Edge and IE.
+ */
+
+hr {
+  box-sizing: content-box; /* 1 */
+  height: 0; /* 1 */
+  overflow: visible; /* 2 */
+}
+
+/**
+ * 1. Correct the inheritance and scaling of font size in all browsers.
+ * 2. Correct the odd `em` font sizing in all browsers.
+ */
+
+pre {
+  font-family: monospace, monospace; /* 1 */
+  font-size: 1em; /* 2 */
+}
+
+/* Text-level semantics
+   ========================================================================== */
+
+/**
+ * Remove the gray background on active links in IE 10.
+ */
+
+a {
+  background-color: transparent;
+}
+
+/**
+ * 1. Remove the bottom border in Chrome 57-
+ * 2. Add the correct text decoration in Chrome, Edge, IE, Opera, and Safari.
+ */
+
+abbr[title] {
+  border-bottom: none; /* 1 */
+  text-decoration: underline; /* 2 */
+  text-decoration: underline dotted; /* 2 */
+}
+
+/**
+ * Add the correct font weight in Chrome, Edge, and Safari.
+ */
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/**
+ * 1. Correct the inheritance and scaling of font size in all browsers.
+ * 2. Correct the odd `em` font sizing in all browsers.
+ */
+
+code,
+kbd,
+samp {
+  font-family: monospace, monospace; /* 1 */
+  font-size: 1em; /* 2 */
+}
+
+/**
+ * Add the correct font size in all browsers.
+ */
+
+small {
+  font-size: 80%;
+}
+
+/**
+ * Prevent `sub` and `sup` elements from affecting the line height in
+ * all browsers.
+ */
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/* Embedded content
+   ========================================================================== */
+
+/**
+ * Remove the border on images inside links in IE 10.
+ */
+
+img {
+  border-style: none;
+}
+
+/* Forms
+   ========================================================================== */
+
+/**
+ * 1. Change the font styles in all browsers.
+ * 2. Remove the margin in Firefox and Safari.
+ */
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  line-height: 1.15; /* 1 */
+  margin: 0; /* 2 */
+}
+
+/**
+ * Show the overflow in IE.
+ * 1. Show the overflow in Edge.
+ */
+
+button,
+input {
+  /* 1 */
+  overflow: visible;
+}
+
+/**
+ * Remove the inheritance of text transform in Edge, Firefox, and IE.
+ * 1. Remove the inheritance of text transform in Firefox.
+ */
+
+button,
+select {
+  /* 1 */
+  text-transform: none;
+}
+
+/**
+ * Correct the inability to style clickable types in iOS and Safari.
+ */
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button;
+}
+
+/**
+ * Remove the inner border and padding in Firefox.
+ */
+
+button::-moz-focus-inner,
+[type="button"]::-moz-focus-inner,
+[type="reset"]::-moz-focus-inner,
+[type="submit"]::-moz-focus-inner {
+  border-style: none;
+  padding: 0;
+}
+
+/**
+ * Restore the focus styles unset by the previous rule.
+ */
+
+button:-moz-focusring,
+[type="button"]:-moz-focusring,
+[type="reset"]:-moz-focusring,
+[type="submit"]:-moz-focusring {
+  outline: 1px dotted ButtonText;
+}
+
+/**
+ * Correct the padding in Firefox.
+ */
+
+fieldset {
+  padding: 0.35em 0.75em 0.625em;
+}
+
+/**
+ * 1. Correct the text wrapping in Edge and IE.
+ * 2. Correct the color inheritance from `fieldset` elements in IE.
+ * 3. Remove the padding so developers are not caught out when they zero out
+ *    `fieldset` elements in all browsers.
+ */
+
+legend {
+  box-sizing: border-box; /* 1 */
+  color: inherit; /* 2 */
+  display: table; /* 1 */
+  max-width: 100%; /* 1 */
+  padding: 0; /* 3 */
+  white-space: normal; /* 1 */
+}
+
+/**
+ * Add the correct vertical alignment in Chrome, Firefox, and Opera.
+ */
+
+progress {
+  vertical-align: baseline;
+}
+
+/**
+ * Remove the default vertical scrollbar in IE 10+.
+ */
+
+textarea {
+  overflow: auto;
+}
+
+/**
+ * 1. Add the correct box sizing in IE 10.
+ * 2. Remove the padding in IE 10.
+ */
+
+[type="checkbox"],
+[type="radio"] {
+  box-sizing: border-box; /* 1 */
+  padding: 0; /* 2 */
+}
+
+/**
+ * Correct the cursor style of increment and decrement buttons in Chrome.
+ */
+
+[type="number"]::-webkit-inner-spin-button,
+[type="number"]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/**
+ * 1. Correct the odd appearance in Chrome and Safari.
+ * 2. Correct the outline style in Safari.
+ */
+
+[type="search"] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/**
+ * Remove the inner padding in Chrome and Safari on macOS.
+ */
+
+[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/**
+ * 1. Correct the inability to style clickable types in iOS and Safari.
+ * 2. Change font properties to `inherit` in Safari.
+ */
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/* Interactive
+   ========================================================================== */
+
+/*
+ * Add the correct display in Edge, IE 10+, and Firefox.
+ */
+
+details {
+  display: block;
+}
+
+/*
+ * Add the correct display in all browsers.
+ */
+
+summary {
+  display: list-item;
+}
+
+/* Misc
+   ========================================================================== */
+
+/**
+ * Add the correct display in IE 10+.
+ */
+
+template {
+  display: none;
+}
+
+/**
+ * Add the correct display in IE 10.
+ */
+
+[hidden] {
+  display: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  box-sizing: inherit;
+}
+
+h2 {
+  margin: 0;
+}
+
+@layer reset, primeng;
+@layer reset {
+  .p-dropdown {
+    width: 300px;
+  }
+}
+ 

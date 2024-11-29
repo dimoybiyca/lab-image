@@ -61,51 +61,26 @@ export class ModelService {
     this.logStatus('Start training optimized model');
     const startTime = Date.now();
 
-    const model = tf.sequential();
-    const xs: tf.Tensor[] = [];
-    const ys: tf.Tensor[] = [];
+    const model = this.buildModel();
+    const numClasses = this.prepareLabelSet();
 
-    const labelsSet = new Set<string>();
-    this.images.forEach((image) => labelsSet.add(image.label));
-    const labelsArray = Array.from(labelsSet);
-    const numClasses = labelsArray.length;
-
-    const imagePromises = this.images.map((image, index) => {
-      return new Promise<void>((resolve) => {
-        const img = new Image();
-        img.src = image.src;
-        img.onload = () => {
-          const tensor = tf.browser.fromPixels(img);
-          const resizedTensor = tf.image.resizeBilinear(tensor, [
-            this.modelOptions.shapeh,
-            this.modelOptions.shapew,
-          ]);
-
-          // Normalize the pixel values (0-255) to (0-1)
-          const normalizedTensor = resizedTensor.div(tf.scalar(255));
-          xs.push(normalizedTensor);
-
-          const labelIndex = this.getLabelIndex(image.label);
-          const oneHotLabel = tf.oneHot(
-            tf.tensor1d([labelIndex], 'int32'),
-            numClasses
-          );
-          ys.push(oneHotLabel);
-
-          resolve();
-
-          this.logStatus(`Image ${index + 1} loaded`);
-        };
-      });
-    });
-    // Wait for all images to be processed
-    await Promise.all(imagePromises);
-    this.logStatus('All images loaded');
-
+    const { xs, ys } = await this.loadAndProcessImages(numClasses);
     const xsTensor = tf.stack(xs);
     const ysTensor = tf.stack(ys).reshape([-1, numClasses]);
 
-    // Optimized model with convolutional and pooling layers
+    this.logStatus('Model created, compiling...');
+    this.compileModel(model);
+
+    this.logStatus('Model compiled, training...');
+    await this.train(model, xsTensor, ysTensor);
+
+    this.model = { model, labels: this.labels, options: this.modelOptions };
+    this.$isModel.next(true);
+    this.logStatus(`Model trained, time = ${Date.now() - startTime}ms`);
+  }
+
+  private buildModel(): tf.Sequential {
+    const model = tf.sequential();
     model.add(
       tf.layers.conv2d({
         inputShape: [this.modelOptions.shapeh, this.modelOptions.shapew, 3],
@@ -114,56 +89,101 @@ export class ModelService {
         activation: 'relu',
       })
     );
-
     model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
-
     model.add(
-      tf.layers.conv2d({
-        filters: 64,
-        kernelSize: 3,
-        activation: 'relu',
-      })
+      tf.layers.conv2d({ filters: 64, kernelSize: 3, activation: 'relu' })
     );
-
     model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
-
     model.add(tf.layers.flatten());
-
     model.add(
       tf.layers.dense({ units: this.modelOptions.neurons, activation: 'relu' })
     );
+    model.add(
+      tf.layers.dense({ units: this.prepareLabelSet(), activation: 'softmax' })
+    );
+    return model;
+  }
 
-    model.add(tf.layers.dense({ units: numClasses, activation: 'softmax' }));
-    this.logStatus('Model created, compiling...');
+  private prepareLabelSet(): number {
+    const labelsSet = new Set<string>();
+    this.images.forEach((image) => labelsSet.add(image.label));
+    this.labels = Array.from(labelsSet);
+    return this.labels.length;
+  }
 
-    // Compile the model with Adam optimizer
+  private async loadAndProcessImages(
+    numClasses: number
+  ): Promise<{ xs: tf.Tensor[]; ys: tf.Tensor[] }> {
+    const xs: tf.Tensor[] = [];
+    const ys: tf.Tensor[] = [];
+
+    const imagePromises = this.images.map((image, index) =>
+      this.processImage(image, index, xs, ys, numClasses)
+    );
+    await Promise.all(imagePromises);
+
+    this.logStatus('All images loaded');
+    return { xs, ys };
+  }
+
+  private async processImage(
+    image: any,
+    index: number,
+    xs: tf.Tensor[],
+    ys: tf.Tensor[],
+    numClasses: number
+  ): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.src = image.src;
+      img.onload = () => {
+        const tensor = tf.browser.fromPixels(img);
+        const resizedTensor = tf.image.resizeBilinear(tensor, [
+          this.modelOptions.shapeh,
+          this.modelOptions.shapew,
+        ]);
+        const normalizedTensor = resizedTensor.div(tf.scalar(255));
+
+        xs.push(normalizedTensor);
+
+        const labelIndex = this.getLabelIndex(image.label);
+        const oneHotLabel = tf.oneHot(
+          tf.tensor1d([labelIndex], 'int32'),
+          numClasses
+        );
+        ys.push(oneHotLabel);
+
+        resolve();
+        this.logStatus(`Image ${index + 1} loaded`);
+      };
+    });
+  }
+
+  private compileModel(model: tf.Sequential): void {
     model.compile({
-      optimizer: tf.train.adam(0.001), // Learning rate 0.001
+      optimizer: tf.train.adam(0.001),
       loss: this.modelOptions.loss,
       metrics: ['accuracy'],
     });
-    this.logStatus('Model compiled, training...');
+  }
 
-    // Train the model
+  private async train(
+    model: tf.Sequential,
+    xsTensor: tf.Tensor,
+    ysTensor: tf.Tensor
+  ): Promise<void> {
     try {
       await model.fit(xsTensor, ysTensor, {
         epochs: this.modelOptions.epochs,
         batchSize: 64,
       });
     } catch (error) {
-      this.processError(error);
+      this.processError();
       throw new Error('Error training model');
     }
-
-    this.model = {
-      model,
-      labels: this.labels,
-      options: this.modelOptions,
-    };
-    this.$isModel.next(true);
-    this.logStatus(`Model trained, time = ${Date.now() - startTime}ms`);
   }
-  processError(error: any) {
+
+  processError(): void {
     this.ngZone.run(() => {
       this.$isTraining.next(false);
       this.$isModel.next(false);
